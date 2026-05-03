@@ -46,6 +46,9 @@ export interface ProfileActionContext extends PhaseContext, IntegrationContext {
 }
 
 export function evaluateCCRChannel(context: CCRActionContext): GateOutcome {
+  if (context.phase === "InRiskyPhase") {
+    return context.rulePriority >= context.emergencyPriorityThreshold ? "emergency_only" : "defer";
+  }
   if (context.phase === "InThinking" || context.phase === "InToolUse") {
     return context.rulePriority >= context.emergencyPriorityThreshold
       ? "emergency_only"
