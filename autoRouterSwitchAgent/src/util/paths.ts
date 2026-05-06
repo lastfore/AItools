@@ -1,3 +1,4 @@
+import { mkdirSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
 
@@ -5,6 +6,13 @@ import { join } from "path";
 export function getArsHome(): string {
   const override = process.env.ARS_HOME?.trim();
   return override && override.length > 0 ? override : join(homedir(), ".ars");
+}
+
+/** JSON 行式 pino 日志目录（确保存在）。 */
+export function getArsLogsDir(): string {
+  const d = join(getArsHome(), "logs");
+  mkdirSync(d, { recursive: true });
+  return d;
 }
 
 export function getDefaultCcrConfigPath(): string {

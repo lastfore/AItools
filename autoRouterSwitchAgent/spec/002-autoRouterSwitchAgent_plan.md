@@ -1097,6 +1097,8 @@ git commit -m "feat(ars): M3 OpenAI gateway minimal streaming subset"
 
 ## 里程碑 M4 — 可观测性
 
+**相关规格（路由日志 Web UI，与任务 16 同源审计数据）：** [003-log-visualization-spec.md](./003-log-visualization-spec.md) — 定义关联键、五面板字段（MVP/可选）、默认 **3457** 只读 REST + 静态页方案及验收边界。
+
 ### 任务 16：`ars explain` 与审计查询
 
 **涉及文件：**

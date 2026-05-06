@@ -3,10 +3,12 @@ import { Command } from "commander";
 import { startDaemonServer } from "../daemon/httpServer.js";
 import { writeFileSync, readFileSync, unlinkSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
-import { getArsHome, getDefaultCcrConfigPath } from "../util/paths.js";
-import { setDecideContext } from "../daemon/decideHandler.js";
+import { getArsHome, getDefaultCcrConfigPath, getArsLogsDir } from "../util/paths.js";
+import { setDecideContext, getDecideContext } from "../daemon/decideHandler.js";
 import { StateStore } from "../store/stateStore.js";
 import { execSync } from "node:child_process";
+import { createDaemonLogger, defaultArsLogPath } from "../logging/logger.js";
+import { formatAuditRowForDisplay } from "../observability/auditDisplay.js";
 
 function pidPath() {
   const home = getArsHome();
@@ -14,7 +16,10 @@ function pidPath() {
   return join(home, "ars.pid");
 }
 
-async function loadRuntime(config: Awaited<ReturnType<typeof import("../config/loadConfig.js").loadConfigFromFile>>) {
+async function loadRuntime(
+  config: Awaited<ReturnType<typeof import("../config/loadConfig.js").loadConfigFromFile>>,
+  logger?: import("pino").Logger,
+) {
   const { loadRulesFromFile } = await import("../rules/loadRules.js");
   const rules = await loadRulesFromFile(config.rules_file);
   const dbPath = join(getArsHome(), "state.db");
@@ -24,6 +29,7 @@ async function loadRuntime(config: Awaited<ReturnType<typeof import("../config/l
     store,
     rules,
     ccrConfigPath: getDefaultCcrConfigPath(),
+    logger,
   });
 }
 
@@ -37,10 +43,18 @@ program
     mkdirSync(getArsHome(), { recursive: true });
     const { loadConfigFromFile } = await import("../config/loadConfig.js");
     const cfg = await loadConfigFromFile(opts.config);
-    await loadRuntime(cfg);
+    const logsDir = getArsLogsDir();
+    const log = createDaemonLogger(cfg.daemon.log_level, defaultArsLogPath(logsDir));
+    await loadRuntime(cfg, log);
     const { close } = await startDaemonServer({
       port: cfg.daemon.http_port,
       host: "127.0.0.1",
+      getStore: () => {
+        const ctx = getDecideContext();
+        if (!ctx?.store) throw new Error("internal: decide context missing store");
+        return ctx.store;
+      },
+      logsDir,
     });
     const pid = process.pid;
     writeFileSync(pidPath(), String(pid), "utf8");
@@ -122,7 +136,12 @@ program
     }
     const s = new StateStore(path);
     const row = s.getAudit(id);
-    console.log(JSON.stringify(row ?? null, null, 2));
+    if (!row) {
+      console.log(JSON.stringify(null, null, 2));
+      s.close();
+      return;
+    }
+    console.log(JSON.stringify(formatAuditRowForDisplay(row), null, 2));
     s.close();
   });
 

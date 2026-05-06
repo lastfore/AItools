@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ARS 观测</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 1rem; max-width: 1200px; }
+      table { border-collapse: collapse; width: 100%; font-size: 14px; }
+      th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; vertical-align: top; }
+      th { background: #f4f4f4; }
+      pre { margin: 0; white-space: pre-wrap; word-break: break-all; max-height: 320px; overflow: auto; }
+      .row--active { background: #eef6ff; }
+      h1 { font-size: 1.25rem; }
+      nav a { margin-right: 1rem; }
+    </style>
+  </head>
+  <body>
+    <h1>autoRouterSwitchAgent 审计 / 日志</h1>
+    <nav>
+      <a href="#audit">审计</a>
+      <a href="#logs">日志</a>
+    </nav>
+    <section id="audit">
+      <h2>审计行</h2>
+      <p><button type="button" id="refresh-audit">刷新</button> 本页仅只读；详情与 <code>ars explain &lt;id&gt;</code> 同源。</p>
+      <table id="audit-table">
+        <thead><tr><th>时间</th><th>id</th><th>规则</th><th>闸门</th><th>摘要</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <h3>详情</h3>
+      <pre id="audit-detail">选中一行…</pre>
+    </section>
+    <section id="logs" style="margin-top:2rem;">
+      <h2>最近的结构化日志</h2>
+      <p><button type="button" id="refresh-logs">刷新</button></p>
+      <pre id="logs-body"></pre>
+    </section>
+    <script>
+      const qs = (id) => document.getElementById(id);
+      function fmtTime(ms) {
+        if (ms == null) return "";
+        try { return new Date(ms).toISOString(); } catch { return String(ms); }
+      }
+      async function loadAudit(highlightId) {
+        const res = await fetch("/api/audit?limit=50");
+        const rows = await res.json();
+        const tb = qs("audit-table").querySelector("tbody");
+        tb.innerHTML = "";
+        for (const r of rows) {
+          const tr = document.createElement("tr");
+          if (highlightId && r.id === highlightId) tr.classList.add("row--active");
+          const sum = typeof r.detail === "object" && r.detail
+            ? JSON.stringify({ requestId: r.detail.requestId, sessionId: r.detail.sessionId, route: r.detail.route })
+            : "";
+          tr.innerHTML = `<td>${fmtTime(r.created_epoch_ms)}</td><td><code>${r.id}</code></td><td>${r.matched_rule ?? ""}</td><td>${r.gate_outcome}</td><td>${sum}</td>`;
+          tr.addEventListener("click", () => showDetail(r.id));
+          tb.appendChild(tr);
+        }
+      }
+      async function showDetail(id) {
+        const res = await fetch("/api/audit/" + encodeURIComponent(id));
+        const j = await res.json();
+        qs("audit-detail").textContent = JSON.stringify(j, null, 2);
+        loadAudit(id);
+      }
+      async function loadLogs() {
+        const res = await fetch("/api/logs?limit=40");
+        const rows = await res.json();
+        qs("logs-body").textContent = JSON.stringify(rows, null, 2);
+      }
+      qs("refresh-audit").addEventListener("click", () => loadAudit());
+      qs("refresh-logs").addEventListener("click", loadLogs);
+      const hid = new URLSearchParams(location.search).get("decisionId");
+      loadAudit(hid || undefined);
+      loadLogs();
+    </script>
+  </body>
+</html>

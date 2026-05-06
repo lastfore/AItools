@@ -30,6 +30,13 @@ export type AuditRow = {
   detail_json: string;
 };
 
+export type ListAuditOpts = {
+  limit: number;
+  fromEpochMs?: number;
+  toEpochMs?: number;
+  sessionId?: string;
+};
+
 export class StateStore {
   private db: Database.Database;
 
@@ -57,6 +64,31 @@ export class StateStore {
       `SELECT id, created_epoch_ms, matched_rule, gate_outcome, detail_json FROM audit WHERE id = ?`,
     );
     return stmt.get(id) as AuditRow | undefined;
+  }
+
+  listAudit(opts: ListAuditOpts): AuditRow[] {
+    const limit = Math.min(Math.max(opts.limit, 1), 500);
+    const conditions: string[] = ["1=1"];
+    const params: unknown[] = [];
+    if (opts.fromEpochMs != null) {
+      conditions.push("created_epoch_ms >= ?");
+      params.push(opts.fromEpochMs);
+    }
+    if (opts.toEpochMs != null) {
+      conditions.push("created_epoch_ms <= ?");
+      params.push(opts.toEpochMs);
+    }
+    if (opts.sessionId) {
+      conditions.push(`json_extract(detail_json, '$.sessionId') = ?`);
+      params.push(opts.sessionId);
+    }
+    const where = conditions.join(" AND ");
+    const sql = `SELECT id, created_epoch_ms, matched_rule, gate_outcome, detail_json
+      FROM audit WHERE ${where}
+      ORDER BY created_epoch_ms DESC, id DESC LIMIT ?`;
+    params.push(limit);
+    const stmt = this.db.prepare(sql);
+    return stmt.all(...params) as AuditRow[];
   }
 
   getMetricJson(key: string): unknown | undefined {

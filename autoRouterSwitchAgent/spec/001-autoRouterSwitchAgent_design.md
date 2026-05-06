@@ -513,7 +513,7 @@ rules_file: ~/.ars/rules.yaml
 | **M1 Claude Code MVP** | 错误 / 长上下文 / thinking-in-progress 三类规则；CCRChannel；E2E 验证 |
 | **M2 配额 + 性能 + Profile** | EWMA 性能滑窗；月配额跟踪；ProfileChannel 上线（Codex / OpenCode 会话级） |
 | **M3 内置 OpenAI 网关** | fastify 起 :3458；`OPENAI_BASE_URL` 接管 Codex / OpenCode；请求级路由对齐 Claude Code |
-| **M4 可观测** | `ars explain` 回放；审计页面；（可选）轻量 web 状态页 |
+| **M4 可观测** | `ars explain` 回放；审计页面；（可选）轻量 web 状态页 — **路由日志 Web UI 字段级规格见** [`spec/003-log-visualization-spec.md`](./003-log-visualization-spec.md)（默认只读 REST + 静态页，`127.0.0.1:3457`，与审计表同源）。 |
 
 ### 10.1 M3 内置 OpenAI 网关：兼容范围、风险与最小子集
 

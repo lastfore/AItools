@@ -12,6 +12,7 @@ import {
   type CcrChannelOptions,
 } from "../executor/ccrChannel.js";
 import { randomUUID } from "crypto";
+import type { Logger } from "pino";
 
 export type DecideBody = {
   sessionId?: string;
@@ -24,6 +25,7 @@ export type DecideContext = {
   store: StateStore;
   rules: RulesFile;
   ccrConfigPath?: string;
+  logger?: Logger;
 };
 
 let decideContext: DecideContext | null = null;
@@ -41,6 +43,25 @@ export function setDecideContext(ctx: DecideContext | null) {
 
 export function getDecideContext(): DecideContext | null {
   return decideContext;
+}
+
+function auditDetail(sessionId: string | undefined, requestId: string, detail: Record<string, unknown>): string {
+  return JSON.stringify({
+    sessionId: sessionId ?? null,
+    requestId,
+    ...detail,
+  });
+}
+
+function logDecide(payload: {
+  decisionId: string;
+  requestId: string;
+  sessionId: string | null;
+  matched_rule: string | null;
+  gate_outcome: string;
+  route: string | null;
+}) {
+  getDecideContext()?.logger?.info(payload, "decide");
 }
 
 /** 供测试注入 RuleEngine 工厂（可选）。 */
@@ -95,13 +116,22 @@ export async function handleDecideWithDeps(deps: {
   });
   const win = engine.evaluate(signals as Record<string, unknown>);
   const decisionId = randomUUID();
+  const requestId = randomUUID();
 
   if (!win) {
     deps.store.appendAudit({
       id: decisionId,
       matched_rule: null,
       gate_outcome: "allow",
-      detail_json: JSON.stringify({ reason: "no_rule" }),
+      detail_json: auditDetail(deps.sessionId, requestId, { reason: "no_rule" }),
+    });
+    logDecide({
+      decisionId,
+      requestId,
+      sessionId: deps.sessionId ?? null,
+      matched_rule: null,
+      gate_outcome: "allow",
+      route: null,
     });
     return { route: null, decisionId };
   }
@@ -123,7 +153,15 @@ export async function handleDecideWithDeps(deps: {
       id: decisionId,
       matched_rule: win.rule.name,
       gate_outcome: "defer",
-      detail_json: JSON.stringify({ action: win.action }),
+      detail_json: auditDetail(deps.sessionId, requestId, { action: win.action }),
+    });
+    logDecide({
+      decisionId,
+      requestId,
+      sessionId: deps.sessionId ?? null,
+      matched_rule: win.rule.name,
+      gate_outcome: "defer",
+      route: null,
     });
     return { route: null, decisionId };
   }
@@ -139,7 +177,15 @@ export async function handleDecideWithDeps(deps: {
         id: decisionId,
         matched_rule: win.rule.name,
         gate_outcome: "allow",
-        detail_json: JSON.stringify({ error: "missing_ccr_config_path" }),
+        detail_json: auditDetail(deps.sessionId, requestId, { error: "missing_ccr_config_path" }),
+      });
+      logDecide({
+        decisionId,
+        requestId,
+        sessionId: deps.sessionId ?? null,
+        matched_rule: win.rule.name,
+        gate_outcome: "allow",
+        route: null,
       });
       return { route: null, decisionId };
     }
@@ -167,7 +213,16 @@ export async function handleDecideWithDeps(deps: {
     id: decisionId,
     matched_rule: win.rule.name,
     gate_outcome: gate,
-    detail_json: JSON.stringify({ action: win.action, route: routeOut }),
+    detail_json: auditDetail(deps.sessionId, requestId, { action: win.action, route: routeOut }),
+  });
+
+  logDecide({
+    decisionId,
+    requestId,
+    sessionId: deps.sessionId ?? null,
+    matched_rule: win.rule.name,
+    gate_outcome: gate,
+    route: routeOut,
   });
 
   return { route: routeOut, decisionId };

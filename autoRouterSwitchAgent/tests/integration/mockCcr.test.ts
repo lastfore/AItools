@@ -81,7 +81,14 @@ describe("mock CCR integration", () => {
       ccrConfigPath: ccrPath,
     });
 
-    const daemon = await startDaemonServer({ port: 0, host: "127.0.0.1" });
+    const logsDir = join(process.env.ARS_HOME!, "logs");
+    mkdirSync(logsDir, { recursive: true });
+    const daemon = await startDaemonServer({
+      port: 0,
+      host: "127.0.0.1",
+      getStore: () => store,
+      logsDir,
+    });
     closeDaemon = daemon.close;
     const dAddr = daemon.server.address();
     if (!dAddr || typeof dAddr === "string") throw new Error("daemon addr");
