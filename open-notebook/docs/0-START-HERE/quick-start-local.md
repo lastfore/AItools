@@ -24,6 +24,8 @@ Run on a different computer, access from another. Needs network configuration.
 
 ## Step 2: Create Configuration (1 min)
 
+> **Ready-made example:** For Ollama + Speaches (LLM + local speech), use [`examples/docker-compose-full-local.yml`](../../examples/docker-compose-full-local.yml).
+
 Create a new folder `open-notebook-local` and add this file:
 
 **docker-compose.yml**:

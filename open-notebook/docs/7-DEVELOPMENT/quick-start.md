@@ -32,7 +32,9 @@ uv --version
 
 ## 3. Start Services (1 min)
 
-In separate terminal windows:
+**Windows:** From repo root, run `.\start-dev.ps1` (see [Windows 部署指南](../../docs_zh/spec/windows-deployment.zh.md)).
+
+**macOS/Linux:** In separate terminal windows:
 
 ```bash
 # Terminal 1: Start SurrealDB (database)

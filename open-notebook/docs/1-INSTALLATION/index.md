@@ -28,6 +28,7 @@ Choose your installation route based on your setup and use case.
 - ✅ Can modify and test
 - ⚠️ Requires Python 3.11+, Node.js
 - ⏱️ 10 minutes to running
+- **Windows:** use `.\start-dev.ps1` — see [Windows 部署指南](../../docs_zh/spec/windows-deployment.zh.md)
 
 ---
 
@@ -106,8 +107,8 @@ Before installing, you'll need:
 ### For Source Installation (Developers)
 1. Have Python 3.11+, Node.js 18+, Git installed
 2. Follow [From Source](from-source.md)
-3. Run `make start-all`
-4. Access at `http://localhost:8502` (frontend) or `http://localhost:5055` (API)
+3. **macOS/Linux:** Run `make start-all` · **Windows:** Run `.\start-dev.ps1` ([guide](../../docs_zh/spec/windows-deployment.zh.md))
+4. Access at `http://localhost:3000` (frontend) or `http://localhost:5055` (API)
 
 ---
 

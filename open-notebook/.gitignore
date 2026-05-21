@@ -1,4 +1,5 @@
 .env
+.dev-logs/
 prompts/patterns/user/
 /notebooks/
 data/

@@ -11,7 +11,6 @@ cd open-notebook
 
 # 2. Copy environment files
 cp .env.example .env
-cp .env.example docker.env
 
 # 3. Install dependencies
 uv sync
@@ -19,6 +18,8 @@ uv sync
 # 4. Start all services (recommended for development)
 make start-all
 ```
+
+**Windows:** Use `.\start-dev.ps1` instead of `make start-all`. It starts SurrealDB, Speaches (TTS/STT), API, worker, and frontend in one terminal. See [Windows 部署指南](docs_zh/spec/windows-deployment.zh.md).
 
 ## Development Workflows
 
@@ -50,9 +51,10 @@ make start-all
 ### What This Does
 
 1. Starts SurrealDB in Docker (port 8000)
-2. Starts FastAPI backend (port 5055)
-3. Starts background worker (surreal-commands)
-4. Starts Next.js frontend (port 3000)
+2. Starts Speaches for local TTS/STT (port 8969) — Windows `start-dev.ps1` only; optional on macOS/Linux
+3. Starts FastAPI backend (port 5055)
+4. Starts background worker (surreal-commands)
+5. Starts Next.js frontend (port 3000)
 
 ### Individual Services
 

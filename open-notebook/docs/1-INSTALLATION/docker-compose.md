@@ -42,6 +42,15 @@ services:
     restart: always
     pull_policy: always
 
+  speaches:
+    image: ghcr.io/speaches-ai/speaches:latest-cpu
+    container_name: speaches
+    ports:
+      - "8969:8000"
+    volumes:
+      - hf-hub-cache:/home/ubuntu/.cache/huggingface/hub
+    restart: unless-stopped
+
   open_notebook:
     image: lfnovo/open_notebook:v1-latest
     ports:
@@ -61,8 +70,12 @@ services:
       - ./notebook_data:/app/data
     depends_on:
       - surrealdb
+      - speaches
     restart: always
     pull_policy: always
+
+volumes:
+  hf-hub-cache:
 ```
 
 **Edit the file:**
@@ -81,6 +94,7 @@ docker compose up -d
 Wait 15-20 seconds for all services to start:
 ```
 ✅ surrealdb running on :8000
+✅ speaches running on :8969 (local TTS/STT)
 ✅ open_notebook running on :8502 (UI) and :5055 (API)
 ```
 
@@ -126,6 +140,20 @@ Your models are now available!
 > - **Anthropic**: https://console.anthropic.com/
 > - **Google**: https://aistudio.google.com/
 > - **Groq**: https://console.groq.com/
+
+### Optional: Local Speech (Speaches)
+
+The default compose file includes **Speaches** for free local text-to-speech and speech-to-text (port **8969**). Download models after first start:
+
+```bash
+# TTS
+docker compose exec speaches uv tool run speaches-cli model download speaches-ai/Kokoro-82M-v1.0-ONNX
+
+# STT
+docker compose exec speaches uv tool run speaches-cli model download Systran/faster-whisper-small
+```
+
+Then in **Settings → API Keys → OpenAI-Compatible**, set TTS/STT base URL to `http://host.docker.internal:8969/v1` (Docker Desktop on Mac/Windows). See [Local TTS](../5-CONFIGURATION/local-tts.md) and [Local STT](../5-CONFIGURATION/local-stt.md).
 
 ---
 
@@ -328,6 +356,8 @@ docker compose up -d
 Looking for different configurations? Check out our [examples/](../../examples/) folder:
 
 - **[Ollama Setup](../../examples/docker-compose-ollama.yml)** - Run local AI models (free, private)
+- **[Speaches Setup](../../examples/docker-compose-speaches.yml)** - Local TTS/STT with Open Notebook
+- **[Full Local Setup](../../examples/docker-compose-full-local.yml)** - Ollama + Speaches (100% local)
 - **[Single Container](../../examples/docker-compose-single.yml)** - All-in-one container (deprecated, will be removed in v2)
 - **[Development](../../examples/docker-compose-dev.yml)** - For contributors and developers
 

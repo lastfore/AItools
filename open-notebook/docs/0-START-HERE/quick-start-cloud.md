@@ -26,13 +26,22 @@ Create a new folder `open-notebook` and add this file:
 services:
   surrealdb:
     image: surrealdb/surrealdb:v2
-    command: start --user root --pass password --bind 0.0.0.0:8000 rocksdb:/mydata/mydatabase.db
+    command: start --log info --user root --pass root rocksdb:/mydata/mydatabase.db
+    user: root
     ports:
       - "8000:8000"
     volumes:
       - ./surreal_data:/mydata
-    # Removed the healthcheck because the v2 image is too minimal to run wget/curl
     restart: always
+
+  speaches:
+    image: ghcr.io/speaches-ai/speaches:latest-cpu
+    container_name: speaches
+    ports:
+      - "8969:8000"
+    volumes:
+      - hf-hub-cache:/home/ubuntu/.cache/huggingface/hub
+    restart: unless-stopped
 
   open_notebook:
     image: lfnovo/open_notebook:v1-latest
@@ -44,15 +53,18 @@ services:
       - OPEN_NOTEBOOK_ENCRYPTION_KEY=change-me-to-a-secret-string
       - SURREAL_URL=ws://surrealdb:8000/rpc
       - SURREAL_USER=root
-      - SURREAL_PASSWORD=password
+      - SURREAL_PASSWORD=root
       - SURREAL_NAMESPACE=open_notebook
       - SURREAL_DATABASE=open_notebook
     volumes:
       - ./notebook_data:/app/data
     depends_on:
       - surrealdb
+      - speaches
     restart: always
 
+volumes:
+  hf-hub-cache:
 ```
 
 **Edit the file:**

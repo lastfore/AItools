@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Open Notebook — 默认模型分配（开发者导读）</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --page-bg: #ffffff;
+      --section-alt: #f5f5f7;
+      --text-primary: #1d1d1f;
+      --text-secondary: #6e6e73;
+      --text-tertiary: #86868b;
+      --link: #0066cc;
+      --link-hover: #004499;
+      --card-bg: #ffffff;
+      --card-border: rgba(0, 0, 0, 0.08);
+      --radius-lg: 18px;
+      --radius-sm: 12px;
+      --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.06);
+      --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+      --maxw: 1024px;
+      --nav-h: 52px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: calc(var(--nav-h) + 12px);
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font-stack);
+      font-size: 17px;
+      line-height: 1.47059;
+      letter-spacing: -0.022em;
+      color: var(--text-primary);
+      background: var(--page-bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      color: var(--link);
+      text-decoration: none;
+    }
+    a:hover { color: var(--link-hover); text-decoration: underline; }
+
+    /* Top nav — compact, Apple-like */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      height: var(--nav-h);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem 1.25rem;
+      flex-wrap: wrap;
+      padding: 0 1rem;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid var(--card-border);
+    }
+    .nav a {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--text-primary);
+      opacity: 0.88;
+    }
+    .nav a:hover { opacity: 1; text-decoration: none; }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 3.5rem 1.5rem 3rem;
+      max-width: var(--maxw);
+      margin: 0 auto;
+    }
+    .hero-eyebrow {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      margin-bottom: 0.75rem;
+    }
+    .hero h1 {
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      margin: 0 0 0.5rem;
+    }
+    .hero-lead {
+      font-size: 21px;
+      font-weight: 400;
+      color: var(--text-secondary);
+      max-width: 42rem;
+      margin: 0 auto 1rem;
+    }
+    .hero-meta {
+      font-size: 14px;
+      color: var(--text-tertiary);
+    }
+
+    /* Sections */
+    section {
+      padding: 3.5rem 1.5rem;
+    }
+    section.alt {
+      background: var(--section-alt);
+    }
+    .section-inner {
+      max-width: var(--maxw);
+      margin: 0 auto;
+    }
+    .section-head {
+      margin-bottom: 2rem;
+    }
+    .section-head h2 {
+      font-size: clamp(28px, 3.5vw, 40px);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.35rem;
+    }
+    .section-head p {
+      margin: 0;
+      font-size: 19px;
+      color: var(--text-secondary);
+      max-width: 40rem;
+    }
+
+    h3 {
+      font-size: 21px;
+      font-weight: 600;
+      margin: 2rem 0 0.75rem;
+      letter-spacing: -0.02em;
+    }
+
+    /* Cards & callouts */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem 1.75rem;
+      box-shadow: var(--shadow-soft);
+      margin: 1rem 0;
+    }
+    section.alt .card {
+      background: #fff;
+    }
+    .callout {
+      border-left: 4px solid #1d1d1f;
+      padding: 0.75rem 0 0.75rem 1.25rem;
+      margin: 1.25rem 0;
+      color: var(--text-secondary);
+      font-size: 15px;
+    }
+    .callout strong { color: var(--text-primary); }
+
+    /* Steps row */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .step {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem 1.35rem;
+    }
+    .step-num {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--text-tertiary);
+      margin-bottom: 0.35rem;
+    }
+    .step h4 {
+      margin: 0 0 0.4rem;
+      font-size: 17px;
+      font-weight: 600;
+    }
+    .step p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* Diagrams */
+    .diagram-wrap {
+      margin: 1.5rem 0;
+      padding: 1.25rem;
+      background: #fff;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    section.alt .diagram-wrap {
+      background: #fafafa;
+    }
+    .diagram-caption {
+      font-size: 13px;
+      color: var(--text-tertiary);
+      margin-top: 0.75rem;
+    }
+
+    /* Tables */
+    .table-wrap {
+      overflow-x: auto;
+      margin: 1rem 0 2rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--card-border);
+      background: #fff;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      vertical-align: top;
+    }
+    th {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--text-tertiary);
+      background: rgba(0, 0, 0, 0.02);
+    }
+    tr:last-child td { border-bottom: none; }
+
+    code, .mono {
+      font-family: var(--font-mono);
+      font-size: 0.9em;
+      background: rgba(0, 0, 0, 0.05);
+      padding: 0.12em 0.35em;
+      border-radius: 4px;
+    }
+    .file-path {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    ul.tight {
+      margin: 0.5rem 0 0;
+      padding-left: 1.2rem;
+      color: var(--text-secondary);
+      font-size: 15px;
+    }
+    ul.tight li { margin: 0.35rem 0; }
+
+    /* Footer */
+    .site-footer {
+      padding: 2.5rem 1.5rem 3rem;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-tertiary);
+      border-top: 1px solid var(--card-border);
+      background: var(--section-alt);
+    }
+    .site-footer p { margin: 0.35rem 0; max-width: 48rem; margin-inline: auto; }
+  </style>
+</head>
+<body>
+
+  <nav class="nav" aria-label="本页目录">
+    <a href="#onboarding">新人三步</a>
+    <a href="#slot-map">槽位映射</a>
+    <a href="#provision">语言模型解析</a>
+    <a href="#source-pipeline">资料摄入</a>
+    <a href="#ask-flow">Ask 流程</a>
+    <a href="#slot-table">槽位对照表</a>
+    <a href="#recommendations">推荐梯度</a>
+    <a href="#reading">源码入口</a>
+  </nav>
+
+  <header class="hero">
+    <p class="hero-eyebrow">Open Notebook · 开发者文档</p>
+    <h1>默认模型分配</h1>
+    <p class="hero-lead">七类「槽位」如何把设置里的默认模型，接到聊天、检索、摄入与播客等工作流上。</p>
+    <p class="hero-meta">配置单例 <code>open_notebook:default_models</code> · UI：<strong>设置 → API Keys → 默认模型分配</strong></p>
+  </header>
+
+  <section id="onboarding" class="alt">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>新人三步</h2>
+        <p>先建立心智模型，再下钻代码，最后在设置里验证。</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">01</span>
+          <h4>认清单例</h4>
+          <p>读 <code>DefaultModels</code> 的字段名与含义（下表与映射图）。</p>
+        </div>
+        <div class="step">
+          <span class="step-num">02</span>
+          <h4>跟一条链路</h4>
+          <p>任选「聊天」或「资料摄入」流程图，对照 <code>graphs/</code> 与 <code>provision.py</code>。</p>
+        </div>
+        <div class="step">
+          <span class="step-num">03</span>
+          <h4>改设置验证</h4>
+          <p>在 UI 中切换默认模型，观察日志与行为；换嵌入模型需<strong>重建索引</strong>。</p>
+        </div>
+      </div>
+      <div class="diagram-wrap" style="margin-top:2rem;">
+        <div class="mermaid">
+flowchart LR
+  subgraph step1 [第一步]
+    A[读 DefaultModels 字段]
+  end
+  subgraph step2 [第二步]
+    B[对照 graphs 与 provision]
+  end
+  subgraph step3 [第三步]
+    C[设置里改模型并验证]
+  end
+  step1 --> step2 --> step3
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="slot-map">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>槽位 → 谁消费</h2>
+        <p>七个数据库字段各自被哪些模块读取（概览）。</p>
+      </div>
+      <div class="diagram-wrap">
+        <div class="mermaid">
+flowchart TB
+  subgraph dm [DefaultModels 单例]
+    M1[default_chat_model]
+    M2[default_embedding_model]
+    M3[default_speech_to_text_model]
+    M4[default_text_to_speech_model]
+    M5[default_transformation_model]
+    M6[default_tools_model]
+    M7[large_context_model]
+  end
+  M1 --> U1[chat.py / source_chat.py]
+  M2 --> U2[embedding.py / vector_search / embed 命令]
+  M3 --> U3[source.py 注入 content_core 音频]
+  M4 --> U4[全局 TTS 默认与自动分配槽位]
+  M5 --> U5[transformation.py / prompt.py]
+  M6 --> U6[ask.py 未显式传 model 时]
+  M7 --> U7[provision.py 超长上下文分支]
+  U4 -.->|Podcast uses voice_model| U8[SpeakerProfile.voice_model]
+        </div>
+      </div>
+      <p class="diagram-caption">播客 TTS 以发言人档案的 <code>voice_model</code> 为准；全局 <code>default_text_to_speech_model</code> 不替代该字段。</p>
+    </div>
+  </section>
+
+  <section id="provision" class="alt">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>语言模型如何被选中</h2>
+        <p><code>provision_langchain_model()</code> 在调用 LangChain 前统一解析（仅 language 类型）。</p>
+      </div>
+      <div class="diagram-wrap">
+        <div class="mermaid">
+flowchart TD
+  Start([provision_langchain_model]) --> T{token_count 大于 105000}
+  T -->|是| L[使用 large_context_model]
+  T -->|否| I{存在 model_id}
+  I -->|是| X[使用指定模型]
+  I -->|否| D[get_default_model 按 default_type]
+  D --> Types[chat / transformation / tools]
+  Types --> FB{transformation 或 tools 未配置}
+  FB -->|是| C[回退 default_chat_model]
+  FB -->|否| OK[使用已配置槽位]
+        </div>
+      </div>
+      <div class="callout">
+        <strong>阈值与估算：</strong>105_000 写死在 <code>open_notebook/ai/provision.py</code>。<code>token_count</code> 使用 <code>o200k_base</code> 估算，与真实模型分词可能有偏差。
+      </div>
+    </div>
+  </section>
+
+  <section id="source-pipeline">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>资料摄入管线</h2>
+        <p>与 <code>source_graph</code> 一致：提取正文 → 保存 → 可选向量化 → 并行转换。</p>
+      </div>
+      <div class="diagram-wrap">
+        <div class="mermaid">
+flowchart TD
+  S([开始摄入]) --> STT{配置了 STT 默认}
+  STT -->|是| A[写入 audio_provider 与 audio_model]
+  STT -->|否| E
+  A --> E[extract_content]
+  E --> SV[save_source 持久化 full_text]
+  SV --> EM{需要 embed}
+  EM -->|是| V[vectorize 异步任务]
+  EM -->|否| TR
+  V --> TR[并行 run transformation 子图]
+  TR --> Done([结束])
+        </div>
+      </div>
+      <p class="diagram-caption">详见 <a href="business-flows.md">spec/business-flows.md</a> 第 2 节。</p>
+    </div>
+  </section>
+
+  <section id="ask-flow" class="alt">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>Ask（检索 + 综合）</h2>
+        <p>多阶段 LangGraph：策略 JSON → 多路向量检索 → 分路摘要 → 最终答案。</p>
+      </div>
+      <div class="diagram-wrap">
+        <div class="mermaid">
+flowchart TD
+  Q[用户问题] --> N1[agent 节点]
+  N1 --> N2[并行 provide_answer]
+  N2 --> VS[vector_search 每路检索词]
+  VS --> N3[各路 LLM 归纳]
+  N3 --> N4[write_final_answer]
+  N4 --> Out[最终回答]
+        </div>
+      </div>
+      <div class="callout">
+        <strong>前后端差异：</strong>后端三阶段在<strong>未</strong>传入 RunnableConfig 中的 <code>strategy_model</code> / <code>answer_model</code> / <code>final_answer_model</code> 时，会按 <code>default_type = tools</code> 解析默认模型（<code>open_notebook/graphs/ask.py</code>）。前端「询问与搜索」页默认把三阶段都设为 <code>default_chat_model</code>（<code>frontend/src/app/(dashboard)/search/page.tsx</code>），除非用户自定义。
+      </div>
+    </div>
+  </section>
+
+  <section id="slot-table">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>槽位对照表</h2>
+        <p>四列：名称、存储类型、何时用到、建议首读文件。</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>槽位</th>
+              <th>Model.type</th>
+              <th>何时用</th>
+              <th>首读</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>聊天</td>
+              <td><code>language</code></td>
+              <td>笔记本 / 单来源对话</td>
+              <td><span class="mono">open_notebook/graphs/chat.py</span><span class="file-path">open_notebook/graphs/source_chat.py</span></td>
+            </tr>
+            <tr>
+              <td>嵌入</td>
+              <td><code>embedding</code></td>
+              <td>语义检索、入库向量化</td>
+              <td><span class="mono">open_notebook/utils/embedding.py</span><span class="file-path">open_notebook/domain/notebook.py</span></td>
+            </tr>
+            <tr>
+              <td>语音转文字</td>
+              <td><code>speech_to_text</code></td>
+              <td>摄入时音频转写</td>
+              <td><span class="mono">open_notebook/graphs/source.py</span></td>
+            </tr>
+            <tr>
+              <td>文字转语音</td>
+              <td><code>text_to_speech</code></td>
+              <td>全局默认；播客用档案 <code>voice_model</code></td>
+              <td><span class="mono">open_notebook/podcasts/models.py</span><span class="file-path">commands/podcast_commands.py</span></td>
+            </tr>
+            <tr>
+              <td>转换</td>
+              <td><code>language</code></td>
+              <td>Transformation / Insight</td>
+              <td><span class="mono">open_notebook/graphs/transformation.py</span><span class="file-path">open_notebook/graphs/prompt.py</span></td>
+            </tr>
+            <tr>
+              <td>工具</td>
+              <td><code>language</code></td>
+              <td>Ask 默认类型；需稳定 JSON 时更重要</td>
+              <td><span class="mono">open_notebook/graphs/ask.py</span></td>
+            </tr>
+            <tr>
+              <td>大上下文</td>
+              <td><code>language</code></td>
+              <td>单次请求估算超 105k tokens</td>
+              <td><span class="mono">open_notebook/ai/provision.py</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="recommendations" class="alt">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>推荐梯度（经济 → 均衡 → 高阶）</h2>
+        <p>与仓库内 <a href="../docs/5-CONFIGURATION/ai-providers.md">docs/5-CONFIGURATION/ai-providers.md</a> 的表述对齐；以下为<strong>选型参考</strong>，非运行时强制。</p>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>槽位</th>
+              <th>经济 / 入门</th>
+              <th>均衡</th>
+              <th>高阶</th>
+              <th>说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>聊天</td>
+              <td><code>gpt-4o-mini</code>；<code>gemini-1.5-flash</code>；<code>qwen-turbo</code>；<code>llama3.1:8b</code>（Ollama）</td>
+              <td><code>gpt-4o</code>；<code>gemini-2.0-flash-exp</code>；<code>claude-sonnet-4-5</code>；<code>qwen-plus</code>；<code>llama-3.3-70b-versatile</code>（Groq）</td>
+              <td><code>o1</code> / <code>o1-mini</code>；<code>claude-opus-4-5</code>；<code>qwen-max</code>；<code>gemini-1.5-pro-latest</code></td>
+              <td>文档「OpenAI / Gemini / Anthropic / Qwen / Groq」推荐节</td>
+            </tr>
+            <tr>
+              <td>转换</td>
+              <td>与聊天相同档或略低（批量成本低）</td>
+              <td><code>gpt-4o</code>、<code>claude-sonnet-4-5</code>、<code>qwen-plus</code></td>
+              <td>长模板或复杂抽取用 Sonnet / Opus / <code>qwen-max</code></td>
+              <td>Groq 文档称适合 transformations；未配置时<strong>回退聊天模型</strong></td>
+            </tr>
+            <tr>
+              <td>工具（Ask）</td>
+              <td>可工作但 JSON 策略易不稳；建议至少均衡档</td>
+              <td><strong>OpenAI</strong> 或 <strong>Anthropic</strong>（与 UI 文案一致）</td>
+              <td>与「均衡」同档或更高；保证结构化输出稳定</td>
+              <td>Ask 首步为 JSON 策略；未配置时回退聊天模型</td>
+            </tr>
+            <tr>
+              <td>大上下文</td>
+              <td><code>gemini-1.5-flash</code>（长窗便宜）</td>
+              <td><code>gemini-2.0-flash</code> / <code>gemini-2.0-flash-exp</code></td>
+              <td><code>gemini-1.5-pro-latest</code>（文档称约 2M context）；<code>MiniMax-M2.5</code>（204K）</td>
+              <td>UI 推荐 Gemini；仅当估算 tokens &gt; 105k 时触发</td>
+            </tr>
+            <tr>
+              <td>嵌入</td>
+              <td>与主 LLM 同一凭据「发现」的默认小型嵌入</td>
+              <td>与常用云厂商配套 embedding（随凭据注册）</td>
+              <td>对检索质量要求高时选维度与上限匹配的商用嵌入</td>
+              <td>文档「Embeddings」节：通常随 LLM 凭据一并发现</td>
+            </tr>
+            <tr>
+              <td>STT</td>
+              <td>支持 STT 的云凭据内较小模型；或 <a href="../docs/5-CONFIGURATION/local-stt.md">本地 Speaches</a></td>
+              <td>OpenAI 系或 Azure 部署的转写模型（见 Azure 节）</td>
+              <td>企业合规选 Azure；多语言按提供商文档选型</td>
+              <td>OpenAI 文档称支持多模式；自建见 OpenAI-Compatible</td>
+            </tr>
+            <tr>
+              <td>TTS</td>
+              <td>云厂商基础 TTS；本地见 <a href="../docs/5-CONFIGURATION/local-tts.md">local-tts</a></td>
+              <td>与播客质量预期匹配的云端 TTS</td>
+              <td>高品质播客按提供商旗舰音色 / 模型</td>
+              <td>播客发音以 <code>voice_model</code> 为准；全局槽位作默认与自动分配</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0;">自建与本地</h3>
+        <p style="color:var(--text-secondary);font-size:15px;margin:0 0 0.75rem;">Ollama、LM Studio、OpenAI-Compatible：零或低 API 成本，但需自管延迟、显存/内存与模型质量。详见文档 <strong>Self-Hosted / Local</strong> 与 <strong>Custom OpenAI-Compatible</strong> 章节。</p>
+        <ul class="tight">
+          <li>Ollama：文档推荐 <code>llama3.1:8b</code> 均衡、<code>phi3:3.8b</code> 极省资源、<code>llama3.3:70b</code> 高质量。</li>
+          <li>OpenRouter：文档示例「快/省」<code>google/gemini-2.0-flash-exp</code>，「质量」<code>anthropic/claude-sonnet-4.5</code>。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="reading">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>源码与延伸阅读</h2>
+        <p>修改默认行为时优先打开这些路径。</p>
+      </div>
+      <div class="card">
+        <ul class="tight" style="color:var(--text-primary);">
+          <li><code>open_notebook/ai/models.py</code> — <code>DefaultModels</code>、<code>ModelManager.get_default_model</code></li>
+          <li><code>open_notebook/ai/provision.py</code> — 大上下文与显式 <code>model_id</code> 优先级</li>
+          <li><code>frontend/src/app/(dashboard)/settings/api-keys/page.tsx</code> — 七个槽位 UI</li>
+          <li><code>open_notebook/graphs/*.py</code> — 各工作流</li>
+          <li><a href="business-flows.md">spec/business-flows.md</a> — 业务流程总览</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <p>Open Notebook — 内部开发者导读页面。</p>
+    <p>「推荐梯度」整理自项目文档与常见用法，不保证与各云厂商实时计费、配额或模型名称一致；以官方控制台与 <code>ai-providers.md</code> 为准。</p>
+  </footer>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'neutral',
+      securityLevel: 'strict',
+      flowchart: { useMaxWidth: true, htmlLabels: true },
+      themeVariables: {
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      }
+    });
+  </script>
+</body>
+</html>

@@ -314,6 +314,30 @@ DEFAULT_TEST_VOICES = {
 }
 
 
+def _resolve_test_tts_params(model_name: str, provider: str) -> Tuple[str, str]:
+    """
+    Pick a voice and sample text that match the configured TTS model.
+
+    OpenAI-compatible servers (Speaches, SiliconFlow, etc.) use model-specific
+    voice IDs, not OpenAI names like ``alloy``.
+    """
+    name = model_name.lower()
+
+    if "moss-ttsd" in name or "moss_ttsd" in name:
+        return "fnlp/MOSS-TTSD-v0.5:anna", "[S1]Hello from Open Notebook"
+
+    if "cosyvoice" in name:
+        return "FunAudioLLM/CosyVoice2-0.5B:anna", "Hello from Open Notebook"
+
+    if "kokoro" in name:
+        if "zh" in name or "v1.1" in name:
+            return "zf_xiaoxiao", "Hello from Open Notebook"
+        return "af_bella", "Hello from Open Notebook"
+
+    voice = DEFAULT_TEST_VOICES.get(provider, "alloy")
+    return voice, "Hello from Open Notebook"
+
+
 def _generate_test_wav() -> io.BytesIO:
     """Generate a minimal 0.5s silence WAV file in memory (16kHz, 16-bit mono)."""
     sample_rate = 16000
@@ -402,8 +426,7 @@ async def test_individual_model(model) -> Tuple[bool, str]:
             return True, "Embedding successful"
 
         elif model.type == "text_to_speech":
-            # For ElevenLabs, look up first available voice (API uses voice_id, not name)
-            voice = DEFAULT_TEST_VOICES.get(model.provider)
+            voice, text = _resolve_test_tts_params(model.name, model.provider)
             if not voice and hasattr(esp_model, "available_voices"):
                 try:
                     voices = esp_model.available_voices
@@ -412,11 +435,9 @@ async def test_individual_model(model) -> Tuple[bool, str]:
                 except Exception:
                     pass
             if not voice:
-                voice = "alloy"  # fallback
+                voice = DEFAULT_TEST_VOICES.get(model.provider, "alloy")
 
-            result = await esp_model.agenerate_speech(
-                text="Hello from Open Notebook", voice=voice
-            )
+            result = await esp_model.agenerate_speech(text=text, voice=voice)
             if result and hasattr(result, "content"):
                 size = len(result.content)
                 return True, f"Audio generated: {size} bytes"

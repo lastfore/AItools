@@ -12,6 +12,18 @@ services:
     restart: always
     pull_policy: always
 
+  # Local OpenAI-compatible TTS + STT (used by start-dev.ps1 on Windows)
+  # Docs: docs/5-CONFIGURATION/local-tts.md, local-stt.md
+  speaches:
+    image: ghcr.io/speaches-ai/speaches:latest-cpu
+    container_name: speaches
+    ports:
+      - "8969:8000"
+    volumes:
+      - hf-hub-cache:/home/ubuntu/.cache/huggingface/hub
+    restart: unless-stopped
+    # GPU: ghcr.io/speaches-ai/speaches:latest-cuda + nvidia device reservation
+
   open_notebook:
     image: lfnovo/open_notebook:v1-latest
     ports:
@@ -32,5 +44,9 @@ services:
       - ./notebook_data:/app/data
     depends_on:
       - surrealdb
+      - speaches
     restart: always
     pull_policy: always
+
+volumes:
+  hf-hub-cache:

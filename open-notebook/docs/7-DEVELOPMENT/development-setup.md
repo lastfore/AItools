@@ -13,6 +13,23 @@ Before you start, ensure you have the following installed:
 - **Node.js 18+** (optional) - For frontend development
 - **Git** - For version control
 
+## Windows Quick Start
+
+On Windows, prefer the PowerShell launcher over `make start-all`:
+
+```powershell
+git clone https://github.com/lfnovo/open-notebook.git
+cd open-notebook
+.\start-dev.ps1
+```
+
+- Starts SurrealDB + Speaches (Docker), API, worker, and frontend
+- First run: `uv sync`, `npm install`, and optional Speaches model download (~3GB)
+- Frontend: http://localhost:3000 · API: http://localhost:5055/docs
+- Stop: **Ctrl+C** or `.\stop-dev.ps1`
+
+See **[Windows 部署指南](../../docs_zh/spec/windows-deployment.zh.md)** for parameters (`-SkipInstall`, `-SkipSpeaches`, etc.) and troubleshooting.
+
 ## Step 1: Clone and Initial Setup
 
 ```bash

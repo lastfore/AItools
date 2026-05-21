@@ -11,6 +11,29 @@ Clone the repository and run locally. **For developers and contributors.**
 - **uv** (Python package manager) - `curl -LsSf https://astral.sh/uv/install.sh | sh`
 - API key from OpenAI or similar (or use Ollama for free)
 
+## Windows: One-Click Dev (Recommended on Windows)
+
+On **Windows 10/11**, use the PowerShell launcher instead of `make start-all` (Makefile uses Unix-only commands):
+
+```powershell
+git clone https://github.com/lfnovo/open-notebook.git
+cd open-notebook
+.\start-dev.ps1
+```
+
+This starts SurrealDB, Speaches (local TTS/STT), API, background worker, and frontend. First run installs dependencies and may download ~3GB of speech models.
+
+| Flag | Purpose |
+|------|---------|
+| `-SkipInstall` | Skip `uv sync` / `npm install` |
+| `-KeepDatabase` | Leave SurrealDB + Speaches running on exit |
+| `-SkipSpeaches` | Do not start local TTS/STT |
+| `-SkipSpeachesModels` | Skip first-run model download |
+
+Stop with **Ctrl+C** in the same terminal, or run `.\stop-dev.ps1`. Full details: **[Windows 部署指南](../../docs_zh/spec/windows-deployment.zh.md)**.
+
+---
+
 ## Quick Setup (10 minutes)
 
 ### 1. Clone Repository

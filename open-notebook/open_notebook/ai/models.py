@@ -16,6 +16,16 @@ from open_notebook.exceptions import ConfigurationError
 ModelType = Union[LanguageModel, EmbeddingModel, SpeechToTextModel, TextToSpeechModel]
 
 
+def _language_model_sampling_overrides(model_name: Optional[str]) -> Dict[str, Any]:
+    """Esperanto defaults top_p=0.9; some endpoints reject it for specific models."""
+    if not model_name:
+        return {}
+    # OpenAI-hosted Moonshot Kimi (e.g. kimi-k2.5): API allows only top_p=0.95
+    if "kimi" in model_name.lower():
+        return {"top_p": 0.95}
+    return {}
+
+
 class Model(ObjectModel):
     table_name: ClassVar[str] = "model"
     nullable_fields: ClassVar[set[str]] = {"credential"}
@@ -140,6 +150,9 @@ class ModelManager:
             from open_notebook.ai.key_provider import provision_provider_keys
 
             await provision_provider_keys(model.provider)
+
+        if model.type == "language" and "top_p" not in kwargs:
+            config.update(_language_model_sampling_overrides(model.name))
 
         # Merge any additional kwargs (e.g. temperature)
         config.update(kwargs)

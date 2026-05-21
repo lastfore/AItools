@@ -120,7 +120,18 @@ services:
       - "8000:8000"
     volumes:
       - ./surreal_data:/mydata
+    environment:
+      - SURREAL_EXPERIMENTAL_GRAPHQL=true
     restart: always
+
+  speaches:
+    image: ghcr.io/speaches-ai/speaches:latest-cpu
+    container_name: speaches
+    ports:
+      - "8969:8000"
+    volumes:
+      - hf-hub-cache:/home/ubuntu/.cache/huggingface/hub
+    restart: unless-stopped
 
   open_notebook:
     image: lfnovo/open_notebook:v1-latest
@@ -138,7 +149,11 @@ services:
       - ./notebook_data:/app/data
     depends_on:
       - surrealdb
+      - speaches
     restart: always
+
+volumes:
+  hf-hub-cache:
 ```
 
 ### Step 2: Set Your Encryption Key
@@ -169,12 +184,15 @@ Done! You're ready to create your first notebook.
 
 > **Want free local AI?** See [examples/docker-compose-ollama.yml](examples/) for Ollama setup
 
+> **Local speech (TTS/STT)?** The default `docker-compose.yml` includes [Speaches](https://github.com/speaches-ai/speaches) on port **8969**. After `docker compose up`, download models and configure in **Settings → API Keys** — see [local TTS](docs/5-CONFIGURATION/local-tts.md) / [local STT](docs/5-CONFIGURATION/local-stt.md).
+
 ---
 
 ### 📚 More Installation Options
 
 - **[With Ollama (Free Local AI)](examples/docker-compose-ollama.yml)** - Run models locally without API costs
 - **[From Source (Developers)](docs/1-INSTALLATION/from-source.md)** - For development and contributions
+- **[Windows 部署指南](docs_zh/spec/windows-deployment.zh.md)** - Docker Compose + 一键开发脚本 (`start-dev.ps1`)
 - **[Complete Installation Guide](docs/1-INSTALLATION/index.md)** - All deployment scenarios
 
 ---
