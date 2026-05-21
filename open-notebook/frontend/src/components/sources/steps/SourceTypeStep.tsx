@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { Control, FieldErrors, UseFormRegister, UseFormSetValue, useWatch } from "react-hook-form"
 import { FileIcon, LinkIcon, FileTextIcon } from "lucide-react"
 import { useTranslation } from "@/lib/hooks/use-translation"
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Controller } from "react-hook-form"
 
 interface CreateSourceFormData {
@@ -97,8 +98,13 @@ interface SourceTypeStepProps {
 
 const MAX_BATCH_SIZE = 50
 
+const FILE_ACCEPT =
+  ".pdf,.doc,.docx,.pptx,.ppt,.xlsx,.xls,.txt,.md,.epub,.mp4,.avi,.mov,.wmv,.mp3,.wav,.m4a,.aac,.jpg,.jpeg,.png,.tiff,.zip,.tar,.gz,.html"
+
 export function SourceTypeStep({ control, register, setValue, errors, urlValidationErrors, onClearUrlErrors }: SourceTypeStepProps) {
   const { t } = useTranslation()
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const { ref: fileRegisterRef, onChange: onFileChange, onBlur: onFileBlur, name: fileInputName } = register('file')
   // Watch the selected type and inputs to detect batch mode
   const selectedType = useWatch({ control, name: 'type' })
   const urlInput = useWatch({ control, name: 'url' })
@@ -245,13 +251,39 @@ export function SourceTypeStep({ control, register, setValue, errors, urlValidat
                           </Badge>
                         )}
                       </div>
-                      <Input
+                      <input
                         id="file"
+                        ref={(element) => {
+                          fileRegisterRef(element)
+                          fileInputRef.current = element
+                        }}
                         type="file"
+                        name={fileInputName}
                         multiple
-                        {...register('file')}
-                        accept=".pdf,.doc,.docx,.pptx,.ppt,.xlsx,.xls,.txt,.md,.epub,.mp4,.avi,.mov,.wmv,.mp3,.wav,.m4a,.aac,.jpg,.jpeg,.png,.tiff,.zip,.tar,.gz,.html"
+                        accept={FILE_ACCEPT}
+                        className="sr-only"
+                        onChange={onFileChange}
+                        onBlur={onFileBlur}
+                        data-testid="source-file-input"
                       />
+                      <div className="flex flex-wrap items-center gap-3 rounded-md border border-input bg-transparent px-3 py-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          data-testid="source-file-select-button"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          {t('sources.selectFile')}
+                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                          {fileCount > 0 && fileInput instanceof FileList
+                            ? Array.from(fileInput)
+                                .map((file) => file.name)
+                                .join(', ')
+                            : t('sources.noFileSelected')}
+                        </span>
+                      </div>
                       <p className="text-xs text-muted-foreground mt-1">
                         {t('sources.selectMultipleFilesHint')}
                       </p>

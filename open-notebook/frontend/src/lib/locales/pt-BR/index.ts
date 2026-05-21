@@ -356,6 +356,8 @@ export const ptBR = {
     lineLabel: "Linha {line}",
     fixInvalidUrls: "Por favor, corrija ou remova as URLs inválidas para continuar",
     selectMultipleFilesHint: "Selecione múltiplos arquivos para importação em lote. Suportados: Documentos (PDF, DOC, DOCX, PPT, XLS, EPUB, TXT, MD), Mídia (MP4, MP3, WAV, M4A), Imagens (JPG, PNG), Arquivos (ZIP)",
+    selectFile: "Selecionar arquivo",
+    noFileSelected: "Nenhum arquivo selecionado",
     selectedFiles: "Arquivos selecionados:",
     textPlaceholder: "Cole ou digite seu conteúdo aqui...",
     htmlDetected: "Conteúdo HTML detectado. Será convertido para Markdown após o processamento.",

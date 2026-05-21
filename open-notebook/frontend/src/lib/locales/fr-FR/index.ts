@@ -356,6 +356,8 @@ export const frFR = {
     lineLabel: "Ligne {line}",
     fixInvalidUrls: "Veuillez corriger ou supprimer les URL invalides pour continuer",
     selectMultipleFilesHint: "Sélectionnez plusieurs fichiers pour une importation groupée. Supportés : Documents (PDF, DOC, DOCX, PPT, XLS, EPUB, TXT, MD), Média (MP4, MP3, WAV, M4A), Images (JPG, PNG), Archives (ZIP)",
+    selectFile: "Choisir un fichier",
+    noFileSelected: "Aucun fichier sélectionné",
     selectedFiles: "Fichiers sélectionnés :",
     textPlaceholder: "Collez ou tapez votre contenu ici...",
     htmlDetected: "Contenu HTML détecté. Il sera converti en Markdown après traitement.",

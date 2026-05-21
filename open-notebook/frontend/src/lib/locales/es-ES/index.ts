@@ -356,6 +356,8 @@ export const esES = {
     lineLabel: "Línea {line}",
     fixInvalidUrls: "Por favor, corrige o elimina las URLs inválidas para continuar",
     selectMultipleFilesHint: "Selecciona múltiples archivos para importar por lotes. Soportados: Documentos (PDF, DOC, DOCX, PPT, XLS, EPUB, TXT, MD), Multimedia (MP4, MP3, WAV, M4A), Imágenes (JPG, PNG), Archivos comprimidos (ZIP)",
+    selectFile: "Seleccionar archivo",
+    noFileSelected: "Ningún archivo seleccionado",
     selectedFiles: "Archivos seleccionados:",
     textPlaceholder: "Pega o escribe tu contenido aquí...",
     htmlDetected: "Contenido HTML detectado. Se convertirá a Markdown después del procesamiento.",

@@ -356,6 +356,8 @@ export const ruRU = {
     lineLabel: "Строка {line}",
     fixInvalidUrls: "Исправьте или удалите недопустимые URL для продолжения",
     selectMultipleFilesHint: "Выберите несколько файлов для пакетного импорта. Поддерживаются: Документы (PDF, DOC, DOCX, PPT, XLS, EPUB, TXT, MD), Медиа (MP4, MP3, WAV, M4A), Изображения (JPG, PNG), Архивы (ZIP)",
+    selectFile: "Выбрать файл",
+    noFileSelected: "Файл не выбран",
     selectedFiles: "Выбранные файлы:",
     textPlaceholder: "Вставьте или введите содержимое здесь...",
     htmlDetected: "Обнаружено HTML-содержимое. После обработки оно будет преобразовано в Markdown.",

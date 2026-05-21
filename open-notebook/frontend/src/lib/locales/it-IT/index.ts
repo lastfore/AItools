@@ -356,6 +356,8 @@ export const itIT = {
     lineLabel: "Riga {line}",
     fixInvalidUrls: "Correggi o rimuovi gli URL non validi per continuare",
     selectMultipleFilesHint: "Seleziona più file per importazione batch. Supportati: Documenti (PDF, DOC, DOCX, PPT, XLS, EPUB, TXT, MD), Media (MP4, MP3, WAV, M4A), Immagini (JPG, PNG), Archivi (ZIP)",
+    selectFile: "Seleziona file",
+    noFileSelected: "Nessun file selezionato",
     selectedFiles: "File selezionati:",
     textPlaceholder: "Incolla o digita il contenuto qui...",
     htmlDetected: "Rilevato contenuto HTML. Verrà convertito in Markdown dopo l'elaborazione.",
