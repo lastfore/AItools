@@ -19,7 +19,7 @@ uv sync
 make start-all
 ```
 
-**Windows:** Use `.\start-dev.ps1` instead of `make start-all`. It starts SurrealDB, Speaches (TTS/STT), API, worker, and frontend in one terminal. See [Windows 部署指南](docs_zh/spec/windows-deployment.zh.md).
+**Windows:** Use `.\start-dev.ps1` instead of `make start-all`. It starts SurrealDB, Speaches (TTS/STT), SearXNG (when `SEARXNG_ENABLED=true` in `.env`), API, worker, and frontend in one terminal. See [Windows 部署指南](docs_zh/spec/windows-deployment.zh.md).
 
 ## Development Workflows
 
@@ -52,9 +52,10 @@ make start-all
 
 1. Starts SurrealDB in Docker (port 8000)
 2. Starts Speaches for local TTS/STT (port 8969) — Windows `start-dev.ps1` only; optional on macOS/Linux
-3. Starts FastAPI backend (port 5055)
-4. Starts background worker (surreal-commands)
-5. Starts Next.js frontend (port 3000)
+3. Starts SearXNG for internet keyword search (port 8080) when `SEARXNG_ENABLED=true` in `.env` — Windows `start-dev.ps1` only
+4. Starts FastAPI backend (port 5055)
+5. Starts background worker (surreal-commands)
+6. Starts Next.js frontend (port 3000)
 
 ### Individual Services
 

@@ -23,12 +23,12 @@ cd open-notebook
 .\start-dev.ps1
 ```
 
-- Starts SurrealDB + Speaches (Docker), API, worker, and frontend
+- Starts SurrealDB + Speaches + SearXNG (when `SEARXNG_ENABLED=true` in `.env`) via Docker, plus API, worker, and frontend
 - First run: `uv sync`, `npm install`, and optional Speaches model download (~3GB)
-- Frontend: http://localhost:3000 · API: http://localhost:5055/docs
+- Frontend: http://localhost:3000 · API: http://localhost:5055/docs · SearXNG: http://localhost:8080 (when enabled)
 - Stop: **Ctrl+C** or `.\stop-dev.ps1`
 
-See **[Windows 部署指南](../../docs_zh/spec/windows-deployment.zh.md)** for parameters (`-SkipInstall`, `-SkipSpeaches`, etc.) and troubleshooting.
+See **[Windows 部署指南](../../docs_zh/spec/windows-deployment.zh.md)** for parameters (`-SkipInstall`, `-SkipSpeaches`, `-SkipSearxng`, etc.) and troubleshooting.
 
 ## Step 1: Clone and Initial Setup
 

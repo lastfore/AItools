@@ -32,7 +32,7 @@ uv --version
 
 ## 3. 启动服务（1 分钟）
 
-**Windows：** 在仓库根目录运行 `.\start-dev.ps1`（见 [Windows 部署指南](../spec/windows-deployment.zh.md)）。
+**Windows：** 在仓库根目录运行 `.\start-dev.ps1`（启动 SurrealDB、Speaches、可选 SearXNG（`.env` 中 `SEARXNG_ENABLED=true`）、API、worker 与前端）。见 [Windows 部署指南](../spec/windows-deployment.zh.md)。
 
 **macOS/Linux：** 在独立终端窗口中：
 

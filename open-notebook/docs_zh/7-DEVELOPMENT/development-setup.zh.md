@@ -23,12 +23,12 @@ cd open-notebook
 .\start-dev.ps1
 ```
 
-- 启动 SurrealDB + Speaches（Docker）、API、worker 与前端
+- 启动 SurrealDB + Speaches + SearXNG（`.env` 中 `SEARXNG_ENABLED=true` 时）及 API、worker 与前端
 - 首次运行：`uv sync`、`npm install`，以及可选的 Speaches 模型下载（约 3GB）
-- 前端：http://localhost:3000 · API：http://localhost:5055/docs
+- 前端：http://localhost:3000 · API：http://localhost:5055/docs · SearXNG：http://localhost:8080（启用时）
 - 停止：**Ctrl+C** 或 `.\stop-dev.ps1`
 
-详见 **[Windows 部署指南](../spec/windows-deployment.zh.md)**（参数 `-SkipInstall`、`-SkipSpeaches` 等及故障排除）。
+详见 **[Windows 部署指南](../spec/windows-deployment.zh.md)**（参数 `-SkipInstall`、`-SkipSpeaches`、`-SkipSearxng` 等及故障排除）。
 
 ## 步骤 1：克隆与初始设置
 

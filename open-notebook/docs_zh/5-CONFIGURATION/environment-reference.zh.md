@@ -109,6 +109,31 @@ CORS_ORIGINS=https://notebook.example.com
 
 ---
 
+## SearXNG（互联网关键词搜索）
+
+用于 **笔记本 → 添加来源 → 关键词搜索网页**（启用后）。Open Notebook 调用自托管的 [SearXNG](https://github.com/searxng/searxng) 实例，不内置公网搜索 API。
+
+| 变量 | 是否必需？ | 默认值 | 说明 |
+|----------|-----------|---------|-------------|
+| `SEARXNG_ENABLED` | 否 | `false` | 设为 `true` 以启用 `POST /api/web-search`。 |
+| `SEARXNG_BASE_URL` | 启用时 | 无 | SearXNG 基础 URL（无尾部路径），Compose 内如 `http://searxng:8080`，本机开发如 `http://localhost:8080`。 |
+| `SEARXNG_TIMEOUT_SECONDS` | 否 | `20` | 请求 SearXNG 的 HTTP 超时（秒）。 |
+| `SEARXNG_MAX_RESULTS` | 否 | `30` | 默认返回 URL 上限（最大 50）。 |
+| `SEARXNG_BLOCKED_DOMAINS` | 否 | 无 | 排除的域名，逗号分隔（如 `facebook.com,pinterest.com`）。 |
+| `SEARXNG_ALLOWED_DOMAINS` | 否 | 无 | 若设置，仅保留主机名匹配其中之一的链接。 |
+| `SEARXNG_DEFAULT_LLM_RANKING` | 否 | `false` | 为 `true` 时，在已配置默认对话模型的情况下默认启用 LLM 重排序。 |
+| `SEARXNG_LLM_RELEVANCE_THRESHOLD` | 否 | `0.45` | LLM 重排序后保留结果的最低相关分（0–1）。 |
+
+**SearXNG 容器配置：** 在 `settings.yml` 的 `search.formats` 中启用 JSON，并设置 `server.secret_key`（见仓库 [`searxng/settings.yml`](../../searxng/settings.yml) 与 [Search API](https://docs.searxng.org/dev/search_api.html)）。
+
+**`.env` 注释：** 注释行须以 `# `（井号+空格）开头。形如 `#SEARXNG_ALLOWED_DOMAINS=…`（井号后无空格）仍会被 python-dotenv 解析为变量。
+
+**结果过滤：** 无空格的单项查询（典型中文关键词）保留 SearXNG 排序；含空格的英文多词查询会额外按标题/摘要做关键词过滤。
+
+**Windows 开发：** [`start-dev.ps1`](../../start-dev.ps1) 在 `SEARXNG_ENABLED=true` 时启动 `searxng` 容器；[`stop-dev.ps1`](../../stop-dev.ps1) 会停止它（除非 `-KeepDatabase`）。
+
+---
+
 ## 网络 / 代理
 
 | 变量 | 是否必需？ | 默认值 | 说明 |

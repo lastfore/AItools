@@ -109,6 +109,31 @@ CORS_ORIGINS=https://notebook.example.com
 
 ---
 
+## SearXNG (internet keyword search)
+
+Used by **Notebook → Add sources → Keyword web search** when enabled. Open Notebook calls your self-hosted [SearXNG](https://github.com/searxng/searxng) instance; it does not ship a public search API.
+
+| Variable | Required? | Default | Description |
+|----------|-----------|---------|-------------|
+| `SEARXNG_ENABLED` | No | `false` | Set to `true` to enable `POST /api/web-search`. |
+| `SEARXNG_BASE_URL` | When enabled | None | Base URL of SearXNG (no trailing path), e.g. `http://searxng:8080` in Compose or `http://localhost:8080` locally. |
+| `SEARXNG_TIMEOUT_SECONDS` | No | `20` | HTTP timeout for SearXNG requests. |
+| `SEARXNG_MAX_RESULTS` | No | `30` | Default cap on URLs returned (max 50). |
+| `SEARXNG_BLOCKED_DOMAINS` | No | None | Comma-separated hostnames to exclude (e.g. `facebook.com,pinterest.com`). |
+| `SEARXNG_ALLOWED_DOMAINS` | No | None | If set, only results whose host matches one of these (comma-separated) are kept. |
+| `SEARXNG_DEFAULT_LLM_RANKING` | No | `false` | If `true`, requests default to LLM re-ranking when a default chat model is configured. |
+| `SEARXNG_LLM_RELEVANCE_THRESHOLD` | No | `0.45` | Minimum LLM relevance score (0–1) to keep a result after re-ranking. |
+
+**SearXNG configuration:** enable JSON output in `settings.yml` under `search.formats` and set `server.secret_key` (see [`searxng/settings.yml`](../../searxng/settings.yml) and [Search API](https://docs.searxng.org/dev/search_api.html)).
+
+**`.env` comments:** lines must start with `# ` (hash and space). A line like `#SEARXNG_ALLOWED_DOMAINS=…` without a space is still parsed by python-dotenv.
+
+**Filtering:** single-term queries without spaces (typical Chinese keywords) keep SearXNG’s ranking; multi-word English queries apply an extra title/snippet keyword filter.
+
+**Windows dev:** [`start-dev.ps1`](../../start-dev.ps1) starts the `searxng` Compose service when `SEARXNG_ENABLED=true`; [`stop-dev.ps1`](../../stop-dev.ps1) stops it unless `-KeepDatabase`.
+
+---
+
 ## Network / Proxy
 
 | Variable | Required? | Default | Description |

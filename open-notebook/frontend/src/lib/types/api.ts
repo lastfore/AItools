@@ -111,6 +111,34 @@ export interface CreateSourceRequest {
   async_processing?: boolean
 }
 
+export interface WebSearchRequest {
+  query: string
+  language?: string | null
+  categories?: string | null
+  time_range?: 'day' | 'month' | 'year' | null
+  max_results?: number
+  safesearch?: number
+  use_llm_ranking?: boolean
+}
+
+export interface WebSearchResultItem {
+  url: string
+  title: string
+  snippet: string
+  engine: string
+  score?: number | null
+  filtered_by: string[]
+}
+
+export interface WebSearchResponse {
+  query: string
+  results: WebSearchResultItem[]
+  total_raw: number
+  total_after_rules: number
+  total_returned: number
+  llm_ranking_applied: boolean
+}
+
 export interface UpdateNoteRequest {
   title?: string
   content?: string

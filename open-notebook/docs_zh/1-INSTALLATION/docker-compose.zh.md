@@ -51,6 +51,16 @@ services:
       - hf-hub-cache:/home/ubuntu/.cache/huggingface/hub
     restart: unless-stopped
 
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./searxng:/etc/searxng:rw
+    restart: unless-stopped
+    pull_policy: always
+
   open_notebook:
     image: lfnovo/open_notebook:v1-latest
     ports:
@@ -95,6 +105,7 @@ docker compose up -d
 ```
 ✅ surrealdb running on :8000
 ✅ speaches running on :8969（本地 TTS/STT）
+✅ searxng running on :8080（可选 — 关键词网页搜索）
 ✅ open_notebook running on :8502 (UI) and :5055 (API)
 ```
 
@@ -211,6 +222,29 @@ docker exec open-notebook-local-ollama-1 ollama pull mistral
 3. 输入 base URL：`http://ollama:11434`
 4. 点击 **Save**，然后 **Test Connection**
 5. 点击 **Discover Models** → **Register Models**
+
+### 添加 SearXNG（互联网关键词搜索）
+
+根目录 [`docker-compose.yml`](../../docker-compose.yml) 已包含 **SearXNG** 服务（端口 **8080**，配置见 [`searxng/settings.yml`](../../searxng/settings.yml)）。需在 `search.formats` 中启用 **`json`**，并设置非默认的 `server.secret_key`（仓库内文件已预配置）。
+
+**在应用中启用搜索** — 在 `open_notebook` 服务的 `environment` 中添加（或由 API 读取的 `.env`）：
+
+```yaml
+      - SEARXNG_ENABLED=true
+      - SEARXNG_BASE_URL=http://searxng:8080
+```
+
+本地源码开发（非 Docker 应用镜像）时，在 `.env` 中设置相同变量，并使用 `SEARXNG_BASE_URL=http://localhost:8080`。
+
+**Windows 一键开发：** 当 `.env` 中 `SEARXNG_ENABLED=true` 时，`.\start-dev.ps1` 会自动启动 SearXNG；`.\stop-dev.ps1` 会停止本次脚本启动的容器（除非使用 `-KeepDatabase`）。
+
+**一体化示例**（所有服务已接线）：
+
+```bash
+docker compose -f examples/docker-compose-searxng.yml up -d
+```
+
+详见 [examples/README.md](../../examples/README.md) 与[环境变量参考](../5-CONFIGURATION/environment-reference.zh.md#searxng互联网关键词搜索)。
 
 ---
 
@@ -356,6 +390,7 @@ docker compose up -d
 需要不同配置？查看 [examples/](../../examples/) 文件夹：
 
 - **[Ollama 设置](../../examples/docker-compose-ollama.yml)** — 运行本地 AI 模型（免费、私密）
+- **[SearXNG 设置](../../examples/docker-compose-searxng.yml)** — 关键词网页搜索 + Open Notebook
 - **[Speaches 设置](../../examples/docker-compose-speaches.yml)** — 本地 TTS/STT + Open Notebook
 - **[完全本地部署](../../examples/docker-compose-full-local.yml)** — Ollama + Speaches（100% 本地）
 - **[单容器](../../examples/docker-compose-single.yml)** — 一体化容器（已弃用，将在 v2 移除）

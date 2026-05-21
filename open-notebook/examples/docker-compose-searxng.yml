@@ -1,0 +1,76 @@
+# Docker Compose: Open Notebook + SearXNG (internet keyword search for sources)
+#
+# SearXNG is a privacy-friendly metasearch engine: https://github.com/searxng/searxng
+#
+# Usage (from repository root):
+#   docker compose -f examples/docker-compose-searxng.yml up -d
+#
+# Bind mounts use ../ so they resolve to the repository root when this file lives under examples/.
+# Requires ../searxng/settings.yml (JSON search API). If you copy this file to the project root,
+# change volume paths to ./surreal_data, ./notebook_data, ./searxng.
+#
+# Configure the app: SEARXNG_BASE_URL=http://searxng:8080 (set below for open_notebook).
+
+services:
+  surrealdb:
+    image: surrealdb/surrealdb:v2
+    command: start --log info --user root --pass root rocksdb:/mydata/mydatabase.db
+    user: root
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../surreal_data:/mydata
+    environment:
+      - SURREAL_EXPERIMENTAL_GRAPHQL=true
+    restart: always
+    pull_policy: always
+
+  speaches:
+    image: ghcr.io/speaches-ai/speaches:latest-cpu
+    container_name: speaches
+    ports:
+      - "8969:8000"
+    volumes:
+      - hf-hub-cache:/home/ubuntu/.cache/huggingface/hub
+    restart: unless-stopped
+
+  searxng:
+    image: searxng/searxng:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../searxng:/etc/searxng:rw
+    restart: unless-stopped
+    pull_policy: always
+
+  open_notebook:
+    image: lfnovo/open_notebook:v1-latest
+    ports:
+      - "8502:8502"
+      - "5055:5055"
+    environment:
+      - OPEN_NOTEBOOK_ENCRYPTION_KEY=change-me-to-a-secret-string
+      - SURREAL_URL=ws://surrealdb:8000/rpc
+      - SURREAL_USER=root
+      - SURREAL_PASSWORD=root
+      - SURREAL_NAMESPACE=open_notebook
+      - SURREAL_DATABASE=open_notebook
+      - SEARXNG_ENABLED=true
+      - SEARXNG_BASE_URL=http://searxng:8080
+      - SEARXNG_TIMEOUT_SECONDS=20
+      - SEARXNG_MAX_RESULTS=30
+      # Optional: comma-separated hostnames (no scheme)
+      # - SEARXNG_BLOCKED_DOMAINS=pinterest.com,facebook.com
+      # - SEARXNG_ALLOWED_DOMAINS=
+      # - SEARXNG_DEFAULT_LLM_RANKING=false
+    volumes:
+      - ../notebook_data:/app/data
+    depends_on:
+      - surrealdb
+      - speaches
+      - searxng
+    restart: always
+    pull_policy: always
+
+volumes:
+  hf-hub-cache:

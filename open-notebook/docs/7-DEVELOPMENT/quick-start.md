@@ -32,7 +32,7 @@ uv --version
 
 ## 3. Start Services (1 min)
 
-**Windows:** From repo root, run `.\start-dev.ps1` (see [Windows 部署指南](../../docs_zh/spec/windows-deployment.zh.md)).
+**Windows:** From repo root, run `.\start-dev.ps1` (starts SurrealDB, Speaches, optional SearXNG when `SEARXNG_ENABLED=true`, API, worker, frontend). See [Windows 部署指南](../../docs_zh/spec/windows-deployment.zh.md).
 
 **macOS/Linux:** In separate terminal windows:
 

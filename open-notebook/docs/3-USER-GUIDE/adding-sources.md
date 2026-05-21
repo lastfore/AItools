@@ -38,6 +38,23 @@ Sources are the raw materials of your research. This guide covers how to add dif
 5. Done! Immediately available
 ```
 
+### Option 4: Keyword web search (SearXNG)
+
+When your administrator has enabled **SearXNG** (a self-hosted metasearch engine), you can discover new pages on the public web and add them as link sources in one flow.
+
+```
+1. In your notebook, open "Add Source" → "Keyword web search"
+2. Enter keywords (and optional language / time range)
+3. Click "Search"
+4. Tick the URLs you want (up to 50 per batch)
+5. Choose notebooks and processing options (embed, transformations)
+6. Click "Add selected" — each URL is fetched like a normal web link source
+```
+
+This searches the **open web**, not your existing notebook library. For searching content you already imported, use the notebook **Search** box or the Search page (knowledge base search).
+
+**Requirements:** SearXNG must be running and `SEARXNG_ENABLED=true` must be set for the API. On Windows dev, `.\start-dev.ps1` starts SearXNG when enabled in `.env`. See [Docker Compose installation](../1-INSTALLATION/docker-compose.md#adding-searxng-internet-keyword-search) and [Environment reference](../5-CONFIGURATION/environment-reference.md#searxng-internet-keyword-search).
+
 ---
 
 ## Supported File Types

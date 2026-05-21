@@ -55,6 +55,12 @@ function Test-SpeachesContainerRunning {
     return (@(Get-DockerOutputLines $result.Output)).Count -gt 0
 }
 
+function Test-SearxngContainerRunning {
+    $result = Invoke-DockerCompose -ComposeArgs @('ps', '-q', '--status', 'running', 'searxng')
+    if ($result.ExitCode -ne 0) { return $false }
+    return (@(Get-DockerOutputLines $result.Output)).Count -gt 0
+}
+
 function Get-DockerDesktopPath {
     $candidates = @(
         (Join-Path ${env:ProgramFiles} 'Docker\Docker\Docker Desktop.exe'),
@@ -150,6 +156,7 @@ function Write-DevState {
         [string]$RepoRoot,
         [bool]$StartedSurreal,
         [bool]$StartedSpeaches = $false,
+        [bool]$StartedSearxng = $false,
         [int[]]$ManagedPids = @()
     )
 
@@ -158,6 +165,7 @@ function Write-DevState {
     @{
         started_surreal   = $StartedSurreal
         started_speaches  = $StartedSpeaches
+        started_searxng   = $StartedSearxng
         managed_pids      = @($ManagedPids)
     } | ConvertTo-Json | Set-Content (Get-DevStatePath -RepoRoot $RepoRoot)
 }
@@ -205,6 +213,7 @@ function Stop-DevServices {
         $state = Read-DevState -RepoRoot $RepoRoot
         $stopSurreal = (Get-DevStateBool -State $state -Name 'started_surreal') -and -not $KeepDatabase
         $stopSpeaches = (Get-DevStateBool -State $state -Name 'started_speaches') -and -not $KeepDatabase
+        $stopSearxng = (Get-DevStateBool -State $state -Name 'started_searxng') -and -not $KeepDatabase
         $hasManaged = @($ManagedPids).Count -gt 0
         $hasDevPorts = @(
             @(3000, 5055) | Where-Object {
@@ -212,7 +221,7 @@ function Stop-DevServices {
             }
         ).Count -gt 0
 
-        if (-not $Force -and -not $hasManaged -and -not $stopSurreal -and -not $stopSpeaches -and -not $hasDevPorts) {
+        if (-not $Force -and -not $hasManaged -and -not $stopSurreal -and -not $stopSpeaches -and -not $stopSearxng -and -not $hasDevPorts) {
             Remove-DevState -RepoRoot $RepoRoot
             return
         }
@@ -248,6 +257,11 @@ function Stop-DevServices {
         if ($stopSpeaches) {
             Write-Ok 'Stopping Speaches container...'
             $null = Invoke-DockerCompose -ComposeArgs @('stop', 'speaches')
+        }
+
+        if ($stopSearxng) {
+            Write-Ok 'Stopping SearXNG container...'
+            $null = Invoke-DockerCompose -ComposeArgs @('stop', 'searxng')
         }
 
         Remove-DevState -RepoRoot $RepoRoot

@@ -51,6 +51,16 @@ services:
       - hf-hub-cache:/home/ubuntu/.cache/huggingface/hub
     restart: unless-stopped
 
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./searxng:/etc/searxng:rw
+    restart: unless-stopped
+    pull_policy: always
+
   open_notebook:
     image: lfnovo/open_notebook:v1-latest
     ports:
@@ -95,6 +105,7 @@ Wait 15-20 seconds for all services to start:
 ```
 ✅ surrealdb running on :8000
 ✅ speaches running on :8969 (local TTS/STT)
+✅ searxng running on :8080 (optional — for keyword web search)
 ✅ open_notebook running on :8502 (UI) and :5055 (API)
 ```
 
@@ -211,6 +222,29 @@ Configure Ollama in the Settings UI:
 3. Enter base URL: `http://ollama:11434`
 4. Click **Save**, then **Test Connection**
 5. Click **Discover Models** → **Register Models**
+
+### Adding SearXNG (internet keyword search)
+
+The root [`docker-compose.yml`](../../docker-compose.yml) includes a **SearXNG** service (port **8080**, config in [`searxng/settings.yml`](../../searxng/settings.yml)). It must expose **`json`** in `search.formats` and a non-default `server.secret_key` (the repo file is preconfigured).
+
+**Enable search in the app** — add to the `open_notebook` service `environment` (or your deployment `.env` consumed by the API):
+
+```yaml
+      - SEARXNG_ENABLED=true
+      - SEARXNG_BASE_URL=http://searxng:8080
+```
+
+For local API development (not the Docker app image), set the same variables in `.env` with `SEARXNG_BASE_URL=http://localhost:8080`.
+
+**Windows one-command dev:** `.\start-dev.ps1` starts SearXNG automatically when `SEARXNG_ENABLED=true` in `.env`. Use `.\stop-dev.ps1` to stop containers the script started (unless `-KeepDatabase`).
+
+**Full-stack example** (all services wired in one file):
+
+```bash
+docker compose -f examples/docker-compose-searxng.yml up -d
+```
+
+See [examples/README.md](../../examples/README.md) and [Environment reference](../5-CONFIGURATION/environment-reference.md#searxng-internet-keyword-search).
 
 ---
 
@@ -356,6 +390,7 @@ docker compose up -d
 Looking for different configurations? Check out our [examples/](../../examples/) folder:
 
 - **[Ollama Setup](../../examples/docker-compose-ollama.yml)** - Run local AI models (free, private)
+- **[SearXNG Setup](../../examples/docker-compose-searxng.yml)** - Self-hosted web search for keyword → URL discovery
 - **[Speaches Setup](../../examples/docker-compose-speaches.yml)** - Local TTS/STT with Open Notebook
 - **[Full Local Setup](../../examples/docker-compose-full-local.yml)** - Ollama + Speaches (100% local)
 - **[Single Container](../../examples/docker-compose-single.yml)** - All-in-one container (deprecated, will be removed in v2)

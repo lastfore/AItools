@@ -12,13 +12,16 @@
   Skip `uv sync` and `npm install` (faster restarts).
 
 .PARAMETER KeepDatabase
-  Leave SurrealDB and Speaches Docker containers running when the script exits.
+  Leave SurrealDB, Speaches, and SearXNG Docker containers running when the script exits.
 
 .PARAMETER SkipSpeaches
   Do not start the local Speaches TTS/STT container.
 
 .PARAMETER SkipSpeachesModels
   Skip pre-downloading Speaches speech models on first run (models may download on first use).
+
+.PARAMETER SkipSearxng
+  Do not start the local SearXNG container (internet keyword search).
 
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File .\scripts\start-dev-windows.ps1
@@ -28,7 +31,8 @@ param(
     [switch]$SkipInstall,
     [switch]$KeepDatabase,
     [switch]$SkipSpeaches,
-    [switch]$SkipSpeachesModels
+    [switch]$SkipSpeachesModels,
+    [switch]$SkipSearxng
 )
 
 Set-StrictMode -Version Latest
@@ -42,6 +46,7 @@ Set-Location $Root
 $LogDir = Join-Path $Root '.dev-logs'
 $script:StartedSurreal = $false
 $script:StartedSpeaches = $false
+$script:StartedSearxng = $false
 $script:ManagedPids = [System.Collections.Generic.List[int]]::new()
 
 $script:SpeachesTtsModel = 'speaches-ai/Kokoro-82M-v1.0-ONNX'
@@ -84,6 +89,21 @@ function Ensure-EnvFile {
     if ($envText -match 'OPEN_NOTEBOOK_ENCRYPTION_KEY=change-me-to-a-secret-string') {
         Write-Warn 'Set OPEN_NOTEBOOK_ENCRYPTION_KEY in .env before storing API keys in production.'
     }
+}
+
+function Test-EnvSearxngEnabled {
+    param([string]$EnvPath)
+
+    if (-not (Test-Path $EnvPath)) { return $false }
+    foreach ($line in Get-Content $EnvPath) {
+        $trimmed = $line.Trim()
+        if ($trimmed -match '^\s*#' -or $trimmed -eq '') { continue }
+        if ($trimmed -match '^SEARXNG_ENABLED\s*=\s*(.+)$') {
+            $value = $Matches[1].Trim().Trim('"').Trim("'").ToLower()
+            return $value -in @('1', 'true', 'yes', 'on')
+        }
+    }
+    return $false
 }
 
 function Test-PortInUse {
@@ -272,6 +292,30 @@ function Ensure-SpeachesModels {
     Write-Ok 'Speaches TTS/STT models ready'
 }
 
+function Start-SearxngService {
+    if (Test-PortInUse -Port 8080) {
+        Write-Ok 'Port 8080 is already in use; using existing SearXNG (skipping docker compose)'
+        return $true
+    }
+
+    Ensure-DockerDaemon
+
+    $searxngWasRunning = Test-SearxngContainerRunning
+    $result = Invoke-DockerCompose -ComposeArgs @('up', '-d', 'searxng')
+    if ($result.ExitCode -ne 0) {
+        $lines = Get-DockerOutputLines $result.Output
+        $detail = if (@($lines).Count -gt 0) { $lines -join [Environment]::NewLine } else { '(no output)' }
+        throw "docker compose up searxng failed (exit $($result.ExitCode)).`n$detail"
+    }
+
+    if ($searxngWasRunning) {
+        Write-Ok 'SearXNG was already running; leaving it up when this script exits'
+        return $true
+    }
+
+    return $false
+}
+
 function Start-SurrealDatabase {
     if (Test-PortInUse -Port 8000) {
         Write-Ok 'Port 8000 is already in use; using existing SurrealDB (skipping docker compose)'
@@ -332,7 +376,7 @@ try {
         $script:StartedSurreal = $true
     }
 
-    Write-DevState -RepoRoot $Root -StartedSurreal $script:StartedSurreal -StartedSpeaches $script:StartedSpeaches
+    Write-DevState -RepoRoot $Root -StartedSurreal $script:StartedSurreal -StartedSpeaches $script:StartedSpeaches -StartedSearxng $script:StartedSearxng
 
     if (-not (Wait-ForTcpPort -Port 8000)) {
         throw 'SurrealDB did not become reachable on port 8000'
@@ -346,7 +390,7 @@ try {
             $script:StartedSpeaches = $true
         }
 
-        Write-DevState -RepoRoot $Root -StartedSurreal $script:StartedSurreal -StartedSpeaches $script:StartedSpeaches
+        Write-DevState -RepoRoot $Root -StartedSurreal $script:StartedSurreal -StartedSpeaches $script:StartedSpeaches -StartedSearxng $script:StartedSearxng
 
         if (-not (Wait-ForTcpPort -Port 8969 -TimeoutSeconds 120)) {
             throw 'Speaches did not become reachable on port 8969 — check: docker compose logs speaches'
@@ -359,7 +403,31 @@ try {
         Write-Warn 'Speaches skipped (-SkipSpeaches). Use local/cloud TTS/STT only if already configured.'
     }
 
-    Write-DevState -RepoRoot $Root -StartedSurreal $script:StartedSurreal -StartedSpeaches $script:StartedSpeaches
+    $envPath = Join-Path $Root '.env'
+    $searxngEnabledInEnv = Test-EnvSearxngEnabled -EnvPath $envPath
+    if (-not $SkipSearxng -and $searxngEnabledInEnv) {
+        Write-Step 'Starting SearXNG (docker compose, port 8080)'
+        $searxngAlreadyUp = Start-SearxngService
+        if (-not $searxngAlreadyUp) {
+            $script:StartedSearxng = $true
+        }
+
+        if (-not (Wait-ForTcpPort -Port 8080 -TimeoutSeconds 120)) {
+            throw 'SearXNG did not become reachable on port 8080 — check: docker compose logs searxng'
+        }
+        if (-not (Test-LocalHttpOk -Uri 'http://127.0.0.1:8080')) {
+            throw 'SearXNG health check failed at http://127.0.0.1:8080 — check: docker compose logs searxng'
+        }
+        Write-Ok 'SearXNG is listening on port 8080'
+    }
+    elseif ($SkipSearxng) {
+        Write-Warn 'SearXNG skipped (-SkipSearxng). Internet keyword search needs a running SearXNG instance.'
+    }
+    elseif (-not $searxngEnabledInEnv) {
+        Write-Warn 'SearXNG skipped (SEARXNG_ENABLED is not true in .env). Set SEARXNG_ENABLED=true to enable web search.'
+    }
+
+    Write-DevState -RepoRoot $Root -StartedSurreal $script:StartedSurreal -StartedSpeaches $script:StartedSpeaches -StartedSearxng $script:StartedSearxng
     Register-DevCleanupHandlers -RepoRoot $Root -ManagedPids $script:ManagedPids -KeepDatabase:$KeepDatabase
 
     Write-Step 'Starting API (port 5055)'
@@ -399,12 +467,18 @@ try {
             PYTHONIOENCODING   = 'utf-8'
         }
 
-    Write-DevState -RepoRoot $Root -StartedSurreal $script:StartedSurreal -StartedSpeaches $script:StartedSpeaches -ManagedPids @($script:ManagedPids)
+    Write-DevState -RepoRoot $Root -StartedSurreal $script:StartedSurreal -StartedSpeaches $script:StartedSpeaches -StartedSearxng $script:StartedSearxng -ManagedPids @($script:ManagedPids)
 
     $speachesLine = if ($SkipSpeaches) {
         '    Speaches : (skipped — use -SkipSpeaches only if you run TTS/STT elsewhere)'
     } else {
         "    Speaches : http://localhost:8969  (TTS: $($script:SpeachesTtsModel))"
+    }
+
+    $searxngLine = if ($SkipSearxng -or -not $searxngEnabledInEnv) {
+        '    SearXNG  : (skipped — set SEARXNG_ENABLED=true in .env or omit -SkipSearxng)'
+    } else {
+        '    SearXNG  : http://localhost:8080  (internet keyword search)'
     }
 
     Write-Host @"
@@ -415,6 +489,7 @@ try {
     API docs : http://localhost:5055/docs
     SurrealDB: http://localhost:8000
 $speachesLine
+$searxngLine
 
   Configure speech in UI: Settings → API Keys → OpenAI Compatible
   Press Ctrl+C to stop (add -KeepDatabase to leave Docker containers running).

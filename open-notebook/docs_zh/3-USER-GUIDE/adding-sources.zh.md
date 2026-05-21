@@ -38,6 +38,23 @@
 5. 完成！立即可用
 ```
 
+### 方式 4：关键词搜索网页（SearXNG）
+
+当管理员已部署并启用 **SearXNG**（自托管元搜索引擎）时，您可以在公网上用关键词发现页面，并批量添加为「网页链接」类来源。
+
+```
+1. 在笔记本中打开「添加来源」→「关键词搜索网页」
+2. 输入关键词（可选语言、时间范围等）
+3. 点击「搜索」
+4. 勾选要添加的 URL（每批最多 50 个）
+5. 选择笔记本与处理选项（嵌入、转换等）
+6. 点击「添加所选」——每个 URL 会按普通网页链接来源抓取
+```
+
+这搜索的是**互联网**，不是您已导入的笔记本资料库。若要检索已收录内容，请使用笔记本内的 **搜索** 或「搜索」页面（知识库搜索）。
+
+**前提：** SearXNG 服务已运行，且 API 环境变量中 `SEARXNG_ENABLED=true`。Windows 开发环境下，`.env` 启用后 `.\start-dev.ps1` 会自动启动 SearXNG。详见 [Docker Compose 安装](../../docs/1-INSTALLATION/docker-compose.md#adding-searxng-internet-keyword-search) 与 [环境变量参考](../../docs/5-CONFIGURATION/environment-reference.md#searxng-internet-keyword-search)。
+
 ---
 
 ## 支持的文件类型

@@ -24,6 +24,18 @@ services:
     restart: unless-stopped
     # GPU: ghcr.io/speaches-ai/speaches:latest-cuda + nvidia device reservation
 
+  # Privacy-friendly metasearch for internet keyword search (web sources)
+  # Docs: docs/1-INSTALLATION/docker-compose.md, examples/docker-compose-searxng.yml
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./searxng:/etc/searxng:rw
+    restart: unless-stopped
+    pull_policy: always
+
   open_notebook:
     image: lfnovo/open_notebook:v1-latest
     ports:

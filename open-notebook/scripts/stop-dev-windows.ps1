@@ -4,7 +4,7 @@
   Stop Open Notebook local dev services started by start-dev-windows.ps1.
 
 .PARAMETER KeepDatabase
-  Do not stop the SurrealDB and Speaches containers even if this session started them.
+  Do not stop the SurrealDB, Speaches, and SearXNG containers even if this session started them.
 #>
 [CmdletBinding()]
 param(

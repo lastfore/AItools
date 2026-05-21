@@ -33,6 +33,7 @@ flowchart TB
     APP[open_notebook container]
     DB[surrealdb container]
     SP[speaches TTS/STT]
+    SX[searxng metasearch]
   end
   subgraph cloud [Internet]
     AI[AI providers]
@@ -48,6 +49,7 @@ flowchart TB
 
 - **SurrealDB**：镜像 `surrealdb/surrealdb:v2`，主机端口 **8000**，数据卷 `./surreal_data`
 - **Speaches**（本地 TTS/STT）：镜像 `ghcr.io/speaches-ai/speaches:latest-cpu`，主机端口 **8969**，模型缓存卷 `hf-hub-cache`
+- **SearXNG**（互联网关键词搜索，可选）：镜像 `searxng/searxng:latest`，主机端口 **8080**，配置卷 `./searxng` → 容器 `/etc/searxng`
 - **应用**：镜像 `lfnovo/open_notebook:v1-latest`，端口 **8502**（Web）、**5055**（API），数据卷 `./notebook_data` → 容器 `/app/data`；依赖 `surrealdb` 与 `speaches`
 - **必填环境变量**：`OPEN_NOTEBOOK_ENCRYPTION_KEY`（用于加密存储在库中的 API 凭证）
 
@@ -119,7 +121,7 @@ docker compose down -v
 
 ### 2.6 端口冲突
 
-若 **8502**、**5055**、**8000** 或 **8969** 已被占用，在 `docker-compose.yml` 中修改左侧主机端口，例如：
+若 **8502**、**5055**、**8000**、**8080** 或 **8969** 已被占用，在 `docker-compose.yml` 中修改左侧主机端口，例如：
 
 ```yaml
 ports:
@@ -164,13 +166,15 @@ flowchart TB
     LAUNCH[start-dev.ps1]
     DB2[docker compose surrealdb :8000]
     SP2[docker compose speaches :8969]
+    SX2[docker compose searxng :8080]
     API2[run_api.py :5055]
     WK[surreal-commands-worker]
     FE2[npm run dev :3000]
   end
   LAUNCH --> DB2
   DB2 --> SP2
-  SP2 --> API2
+  SP2 --> SX2
+  SX2 --> API2
   API2 --> WK
   API2 --> FE2
 ```
@@ -203,7 +207,7 @@ start-dev.bat
 
 **停止**：
 
-- 在运行 `start-dev` 的终端按 **Ctrl+C**（会停止 API、worker、前端；若本次由脚本新启动 SurrealDB / Speaches，也会 `docker compose stop` 对应容器）。
+- 在运行 `start-dev` 的终端按 **Ctrl+C**（会停止 API、worker、前端；若本次由脚本新启动 SurrealDB / Speaches / SearXNG，也会 `docker compose stop` 对应容器）。
 - 或另开终端执行：
 
 ```powershell
@@ -215,9 +219,10 @@ start-dev.bat
 | 参数 | 作用 |
 |------|------|
 | `-SkipInstall` | 跳过 `uv sync` 与 `npm install` |
-| `-KeepDatabase` | 退出时不停止 SurrealDB 与 Speaches 容器 |
+| `-KeepDatabase` | 退出时不停止 SurrealDB、Speaches 与 SearXNG 容器 |
 | `-SkipSpeaches` | 不启动本地 Speaches（无本地 TTS/STT） |
 | `-SkipSpeachesModels` | 跳过首次 Speaches 模型下载（使用时再按需下载） |
+| `-SkipSearxng` | 不启动 SearXNG（无互联网关键词搜索） |
 
 **日志**：后台 API/worker 输出在 `.dev-logs/`（已加入 `.gitignore`）。Speaches 模型下载完成标记：`.dev-logs/speaches-models.ok`（删除后可重新拉取）。
 
@@ -225,7 +230,8 @@ start-dev.bat
 
 - 启动 **worker** 时会自动设置 `PYTHONUTF8=1` 与 `PYTHONIOENCODING=utf-8`，避免中文 Windows 下 GBK 控制台导致 `surreal-commands` 启动崩溃（来源/播客任务无法执行）。
 - 若 Docker 未运行但已安装 Docker Desktop，脚本会尝试**自动启动 Docker Desktop** 并等待就绪（最长约 3 分钟）。
-- 若 **8000** / **8969** 端口已有服务监听，脚本会复用现有实例，退出时不会停止非本次启动的容器。
+- 若 **8000** / **8969** / **8080** 端口已有服务监听，脚本会复用现有实例，退出时不会停止非本次启动的容器。
+- 当 `.env` 中 **`SEARXNG_ENABLED=true`** 时，脚本会启动 SearXNG（除非 `-SkipSearxng`）。修改 `.env` 后需重启 dev 服务，API 才会加载新变量。
 - 使用公司 HTTP 代理时，`.env.example` 中的 **`NO_PROXY`** 建议保留，避免 localhost 健康检查与 Speaches 调用失败。
 
 **相关文件**：
@@ -241,7 +247,8 @@ start-dev.bat
 - **前端**：<http://localhost:3000>  
 - **OpenAPI**：<http://localhost:5055/docs>  
 - **SurrealDB**：<http://localhost:8000>（WebSocket 由应用使用）  
-- **Speaches**（默认启用）：<http://localhost:8969>
+- **Speaches**（默认启用）：<http://localhost:8969>  
+- **SearXNG**（`.env` 中 `SEARXNG_ENABLED=true` 时由脚本启动）：<http://localhost:8080>
 
 **本地语音（Speaches）UI 配置**（Settings → API Keys → OpenAI-Compatible）：
 
@@ -252,6 +259,15 @@ start-dev.bat
 | STT 模型 | `Systran/faster-whisper-large-v3`（脚本默认下载） |
 
 也可使用云端备用（见 `.env.example` 中 SiliconFlow 注释）。安装文档亦参考：**[从源码安装](../1-INSTALLATION/from-source.zh.md)**。
+
+**互联网关键词搜索（SearXNG，可选）** — 在 `.env` 中设置：
+
+| 项 | 值 |
+|----|-----|
+| `SEARXNG_ENABLED` | `true` |
+| `SEARXNG_BASE_URL` | `http://localhost:8080` |
+
+脚本会在 API 启动前拉起 SearXNG 容器。笔记本内：**添加来源 → 关键词搜索网页**。详见 [添加来源](../3-USER-GUIDE/adding-sources.zh.md)。
 
 ### 4.4 手动多终端启动（备选）
 
@@ -272,8 +288,8 @@ Copy-Item .env.example .env
 # ws://127.0.0.1:8000/rpc
 notepad .env
 
-# 启动数据库与 Speaches（在项目根目录，使用根目录 docker-compose）
-docker compose up -d surrealdb speaches
+# 启动数据库、Speaches 与 SearXNG（在项目根目录，使用根目录 docker-compose）
+docker compose up -d surrealdb speaches searxng
 
 # 终端 2：API
 uv run --env-file .env run_api.py
@@ -297,7 +313,10 @@ npm run dev
 |------|------|
 | **`python-magic` / libmagic** | 文档中有 `uv pip install python-magic`；Windows 上常需 **`python-magic-bin`** 或等价方案以提供 DLL：`uv pip install python-magic-bin` |
 | **PowerShell 脚本执行策略** | 若 `.\start-dev.ps1` 被拦截：`Set-ExecutionPolicy RemoteSigned -Scope CurrentUser`，或使用 **`start-dev.bat`** |
-| **端口占用** | 先运行 `.\stop-dev.ps1`，或 `netstat -ano | findstr ":5055 :3000 :8969"` 查看 PID |
+| **端口占用** | 先运行 `.\stop-dev.ps1`，或运行 `netstat -ano` 配合 `findstr ":5055 :3000 :8080 :8969"` 查看 PID |
+| **关键词搜索报错 disabled** | 确认 `.env` 中 `SEARXNG_ENABLED=true` 且 `SEARXNG_BASE_URL=http://localhost:8080`；SearXNG 容器在运行；**修改 .env 后重启 API** |
+| **注释了 ALLOWED_DOMAINS 仍生效** | python-dotenv 要求注释为 `# `（井号+空格）。`#SEARXNG_ALLOWED_DOMAINS=…` 仍会被解析 |
+| **搜索有原始条数但展示 0 条** | 检查 `SEARXNG_ALLOWED_DOMAINS` / `SEARXNG_BLOCKED_DOMAINS`；SearXNG 引擎是否 CAPTCHA/超时（`docker compose logs searxng`） |
 | **HTTP 代理 / localhost 失败** | 在 `.env` 中设置 `NO_PROXY=127.0.0.1,localhost,...`（见 `.env.example`）；脚本健康检查已绕过系统代理 |
 | **Speaches 首次启动慢** | 模型下载约 3GB；可用 `-SkipSpeachesModels` 跳过，或 `-SkipSpeaches` 完全禁用 |
 | **来源一直「正在处理」/ `CommandStatus.NEW`** | 多为 **worker 未运行**。查看 `.dev-logs/worker.err.log`；若见 `UnicodeEncodeError: 'gbk'`，在启动 worker 前设置 `PYTHONUTF8=1` 与 `PYTHONIOENCODING=utf-8`（**`start-dev.ps1` 已自动设置**） |
@@ -327,8 +346,10 @@ npm run dev
 | `OPEN_NOTEBOOK_PASSWORD` | 否 | — | 访问 API/UI 的密码保护 |
 | `API_URL` | 否 | 反代后的公网 URL | 影响前端生成的链接等 |
 | `CORS_ORIGINS` | 否 | 生产建议显式域名 | 默认宽松，生产需收紧 |
-| `NO_PROXY` | 否 | `127.0.0.1,localhost,...` | 代理环境下访问本机 SurrealDB / Speaches |
+| `NO_PROXY` | 否 | `127.0.0.1,localhost,...` | 代理环境下访问本机 SurrealDB / Speaches / SearXNG |
 | `OPEN_NOTEBOOK_EMBEDDING_BATCH_SIZE` | 否 | `10`（DashScope 等） | 每批嵌入条数，默认 50；`text-embedding-v4` 等 API 上限常为 10 |
+| `SEARXNG_ENABLED` | 否 | `false` | 设为 `true` 启用笔记本「关键词搜索网页」 |
+| `SEARXNG_BASE_URL` | 启用时 | `http://localhost:8080` | 本机 dev 指向 SearXNG；Compose 内应用容器用 `http://searxng:8080` |
 
 根目录 [`CONFIGURATION.md`](../../CONFIGURATION.md) 已迁移至 **`docs/5-CONFIGURATION/`**（中文见 [配置索引](../5-CONFIGURATION/index.zh.md)）。
 
@@ -358,7 +379,8 @@ npm run dev
 
 - [Docker Compose 安装](../1-INSTALLATION/docker-compose.zh.md)  
 - [本地 TTS](../5-CONFIGURATION/local-tts.zh.md) / [本地 STT](../5-CONFIGURATION/local-stt.zh.md)  
-- [环境变量参考](../5-CONFIGURATION/environment-reference.zh.md)  
+- [环境变量参考](../5-CONFIGURATION/environment-reference.zh.md)（含 SearXNG）  
+- [添加来源（关键词搜索）](../3-USER-GUIDE/adding-sources.zh.md)  
 - [架构说明](../../spec/architecture.md)  
 - [业务流程](../../spec/business-flows.md)
 

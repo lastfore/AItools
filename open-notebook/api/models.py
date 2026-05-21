@@ -46,6 +46,46 @@ class SearchResponse(BaseModel):
     search_type: str = Field(..., description="Type of search performed")
 
 
+# Internet web search (SearXNG) — discover URLs to add as link sources
+class WebSearchRequest(BaseModel):
+    query: str = Field(..., description="Search keywords")
+    language: Optional[str] = Field(
+        None, description="SearXNG language code (e.g. en, zh-CN)"
+    )
+    categories: Optional[str] = Field(
+        "general", description="SearXNG categories (comma-separated)"
+    )
+    time_range: Optional[Literal["day", "month", "year"]] = Field(
+        None, description="Time range filter for supported engines"
+    )
+    max_results: int = Field(
+        30, description="Maximum URLs to return after filtering", ge=1, le=50
+    )
+    safesearch: int = Field(1, description="SearXNG safe search level 0-2", ge=0, le=2)
+    use_llm_ranking: bool = Field(
+        False,
+        description="When true (or when SEARXNG_DEFAULT_LLM_RANKING is set), run LLM relevance ranking",
+    )
+
+
+class WebSearchResultItem(BaseModel):
+    url: str
+    title: str = ""
+    snippet: str = ""
+    engine: str = ""
+    score: Optional[float] = Field(None, description="Relevance score after LLM ranking, if any")
+    filtered_by: List[str] = Field(default_factory=list, description="Rule filter stages applied")
+
+
+class WebSearchResponse(BaseModel):
+    query: str
+    results: List[WebSearchResultItem]
+    total_raw: int = Field(..., description="Result count from SearXNG before rule filters")
+    total_after_rules: int
+    total_returned: int
+    llm_ranking_applied: bool = False
+
+
 class AskRequest(BaseModel):
     question: str = Field(..., description="Question to ask the knowledge base")
     strategy_model: str = Field(..., description="Model ID for query strategy")

@@ -50,6 +50,28 @@ This folder contains different `docker-compose.yml` configurations for various u
 
 ---
 
+### `docker-compose-searxng.yml` - SearXNG (web URL discovery)
+
+**Use this if:** You want **keyword search on the public web** to find pages to add as link sources (privacy-friendly metasearch via [SearXNG](https://github.com/searxng/searxng)).
+
+**Note:** The repository **root** [`docker-compose.yml`](../docker-compose.yml) now also includes a `searxng` service on port **8080**. You still need `SEARXNG_ENABLED=true` and `SEARXNG_BASE_URL` on the Open Notebook API. This example wires all services together for production-style Compose.
+
+**Features:**
+
+- **SearXNG** on port **8080** (enable `json` format in mounted `settings.yml`; see repo [searxng/settings.yml](../searxng/settings.yml))
+- Same SurrealDB + Speaches + Open Notebook stack as the default root compose
+- App env: `SEARXNG_ENABLED=true`, `SEARXNG_BASE_URL=http://searxng:8080`
+
+**Setup (from repo root):**
+
+```bash
+docker compose -f examples/docker-compose-searxng.yml up -d
+```
+
+See [Installation: Docker Compose](../docs/1-INSTALLATION/docker-compose.md#adding-searxng-internet-keyword-search) and [Environment reference](../docs/5-CONFIGURATION/environment-reference.md#searxng-internet-keyword-search).
+
+---
+
 ### `docker-compose-ollama.yml` - Free Local AI with Ollama
 **Use this if:** You want to run AI models locally without API costs
 
